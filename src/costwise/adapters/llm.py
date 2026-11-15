@@ -49,9 +49,6 @@ class ProviderError(RuntimeError):
     contains the API key or request headers."""
 
 
-RETRY_STATUS = {429, 500, 502, 503, 504}
-
-
 class OpenRouterLLM:
     """Thin httpx client for OpenRouter's chat completions. Asks for `usage.include` so the
     response carries the real cost in credits (USD); falls back to the price table otherwise.
@@ -85,7 +82,7 @@ class OpenRouterLLM:
             raise _Retryable(f"timeout calling the provider for {model} ({type(e).__name__})") from None
         except httpx.TransportError as e:
             raise _Retryable(f"network error calling the provider for {model} ({type(e).__name__})") from None
-        if r.status_code in RETRY_STATUS:
+        if r.status_code == 429 or r.status_code >= 500:
             raise _Retryable(f"HTTP {r.status_code} from the provider for {model}")
         if r.status_code >= 400:
             raise ProviderError(f"HTTP {r.status_code} from the provider for {model}: {_error_message(r)}")

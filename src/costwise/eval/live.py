@@ -161,6 +161,9 @@ def run_config(pipeline: Pipeline, stream: Sequence[Query], keywords: dict[str, 
         except ProviderError as e:
             r.error = f"provider error: {e}"
             break
+        except Exception as e:                    # unexpected: keep the partial counts, stop the run
+            r.error = f"{type(e).__name__}: {e}"
+            break
         r.queries += 1
         ok = is_correct(a.text, keywords[q.qid])
         r.correct += ok

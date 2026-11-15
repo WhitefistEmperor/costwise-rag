@@ -42,6 +42,30 @@ def test_openrouter_retries_429_and_5xx_then_succeeds():
     assert len(seen) == 3 and sleeps == [0.5, 1.0]
 
 
+@pytest.mark.parametrize("status", [500, 501, 505, 529])
+def test_openrouter_retries_every_5xx(status):
+    replies = [httpx.Response(status), ok_response("fine")]
+    llm = OpenRouterLLM("k", transport=httpx.MockTransport(lambda r: replies.pop(0)), sleep=lambda s: None)
+    assert llm.complete("mock/small", "s", "u", 5).text == "fine" and replies == []
+
+
+def test_unexpected_error_mid_config_keeps_partial_counts(live_settings):
+    state = {"n": 0}
+
+    def respond(model, system, user):
+        state["n"] += 1
+        if state["n"] > 2:
+            raise KeyError("odd response shape")
+        return user.split("Context:\n", 1)[-1].split("\n\nQuestion:", 1)[0]
+
+    out = run(live_settings, MockLLM(respond=respond), mock=True, max_cost_usd=1.0, seeds=(0,),
+              configs=["baseline_always_large", "always_small"], embedder=HashEmbedder())
+    first = out["configs"]["baseline_always_large"]
+    assert first["queries"] == 2 and first["correct"] >= 1 and "KeyError" in first["error"]
+    assert out["stopped"] == "error during config 'baseline_always_large'"
+    assert list(out["configs"]) == ["baseline_always_large"]
+
+
 def test_openrouter_retries_timeouts_and_gives_up_with_provider_error():
     calls = []
 

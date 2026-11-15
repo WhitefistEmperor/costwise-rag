@@ -84,7 +84,7 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
   | cache_only | 124/140 | $0.1955 | {'large': 84, 'cache': 56} | 56 (2 wrong) | 0 |
   | full | 124/140 | $0.0502 | {'small': 67, 'large': 17, 'cache': 56} | 56 (2 wrong) | 0 |
 
-- **Review fixes (15 Nov 2026),** one commit each, every one with a regression test. 148 tests
+- **Review fixes (15 Nov 2026),** one commit each, every one with a regression test. 153 tests
   pass, none touch the network.
   1. Live run: `OpenRouterLLM` retries 429/5xx/timeouts (2 retries, backoff) and every retry
      passes the budget check; other errors and a 200 without `choices` raise `ProviderError`.
