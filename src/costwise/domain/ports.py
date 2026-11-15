@@ -1,6 +1,7 @@
 """Interfaces the core pipeline depends on. Adapters implement these."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Protocol, Sequence
 
 import numpy as np
@@ -25,6 +26,19 @@ class Verifier(Protocol):
     name: str
 
     def same_question(self, query: str, cached_query: str) -> bool: ...
+
+
+@dataclass(frozen=True)
+class Verdict:
+    same: bool
+    cost_usd: float = 0.0
+
+
+class PaidVerifier(Verifier, Protocol):
+    """A verifier whose check can cost money (an LLM). `judge` returns the verdict together with
+    the cost of that one call, so concurrent requests never read each other's cost."""
+
+    def judge(self, query: str, cached_query: str) -> Verdict: ...
 
 
 class LLMClient(Protocol):

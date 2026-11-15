@@ -56,7 +56,6 @@ class OracleVerifier:
     Gives the upper bound of what a real strong verifier (LLM, cross-encoder) could reach."""
 
     name = "oracle"
-    last_cost_usd = 0.0
 
     def __init__(self, questions: Sequence[dict]):
         self.qid = {t: q["id"] for q in questions for t in all_texts(q)}
@@ -126,7 +125,7 @@ def simulate_stream(stream: Sequence[Query], vecs: dict[str, np.ndarray], thresh
     key = lambda text: evidence[text] if evidence is not None else None
     hits = wrong = 0
     for q in stream:
-        hit = cache.lookup(q.text, vecs[q.text], evidence_key=key(q.text))
+        hit = cache.lookup(q.text, vecs[q.text], evidence_key=key(q.text)).hit
         if hit is None:
             cache.put(CacheEntry(q.text, "", {}, "", 0.0, 0.0, tag=q.qid, evidence_key=key(q.text)),
                       vecs[q.text])

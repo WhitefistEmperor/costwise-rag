@@ -62,8 +62,8 @@ class Pipeline:
         verify_cost = 0.0
 
         if self.cache is not None:
-            hit = self.cache.lookup(query, qvec, self.doc_hashes or None, evidence_key)
-            verify_cost = self.cache.last_lookup_cost_usd
+            looked = self.cache.lookup(query, qvec, self.doc_hashes or None, evidence_key)
+            hit, verify_cost = looked.hit, looked.cost_usd
             if hit is not None:
                 answer = Answer(query, hit.entry.answer, "cache", hit.entry.model, list(hit.entry.sources),
                                 cache_tier=hit.tier, cache_similarity=round(hit.similarity, 4),

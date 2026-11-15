@@ -19,10 +19,11 @@ Key terms are:
 from __future__ import annotations
 
 import re
+import threading
 from typing import Callable, Iterable, Sequence
 
 from ..domain.models import Chunk
-from ..domain.ports import LLMClient
+from ..domain.ports import LLMClient, Verdict
 
 _TOKEN = re.compile(r"[A-Za-z0-9]+(?:\.[0-9]+)?")
 _NUMBER = re.compile(r"[0-9]+(?:\.[0-9]+)?")
@@ -111,8 +112,9 @@ class LLMVerifier:
     """Strong verifier: asks a small LLM whether two questions ask for the same information.
 
     Used only inside the cache's similarity band, at most once per lookup. One call is a few
-    dozen tokens on the small model, roughly 0.5% of a large-model answer. The cost of the last
-    call is kept in `last_cost_usd` so the cache can charge it to the request.
+    dozen tokens on the small model, roughly 0.5% of a large-model answer. `judge` returns the
+    verdict together with the cost of that call, so the cache can charge it to the request
+    without a shared "last cost" field that concurrent requests could overwrite.
     """
 
     name = "llm_verifier"
@@ -124,12 +126,15 @@ class LLMVerifier:
         self.llm, self.model, self.max_tokens = llm, model, max_tokens
         self.calls = 0
         self.cost_usd = 0.0
-        self.last_cost_usd = 0.0
+        self._lock = threading.Lock()
 
-    def same_question(self, query: str, cached_query: str) -> bool:
+    def judge(self, query: str, cached_query: str) -> Verdict:
         user = f"Question A: {query}\nQuestion B: {cached_query}\nSame information? YES or NO."
         result = self.llm.complete(self.model, self.SYSTEM, user, self.max_tokens)
-        self.calls += 1
-        self.last_cost_usd = result.cost_usd
-        self.cost_usd += result.cost_usd
-        return result.text.strip().upper().startswith("YES")
+        with self._lock:
+            self.calls += 1
+            self.cost_usd += result.cost_usd
+        return Verdict(result.text.strip().upper().startswith("YES"), result.cost_usd)
+
+    def same_question(self, query: str, cached_query: str) -> bool:
+        return self.judge(query, cached_query).same

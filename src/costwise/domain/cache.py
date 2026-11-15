@@ -6,8 +6,9 @@ Two similarity thresholds:
       the cheap verifier (KeyTermGuard) alone decides;
   candidate_threshold <= similarity < threshold (the band)
       the cheap verifier must accept AND a strong verifier (an LLM or cross-encoder asked
-      "same question?") must agree. At most one strong-verifier call per lookup, and its cost
-      is reported so the pipeline can charge it to the request even on a miss.
+      "same question?") must agree. At most one strong-verifier call per lookup; its cost is
+      returned with the lookup result so the pipeline can charge it to the request even on a
+      miss. The cache lock is not held during that call.
 
 Without a strong verifier the band is empty and only the accept threshold applies.
 
@@ -25,7 +26,7 @@ from typing import Callable, Protocol
 import numpy as np
 
 from .models import CacheEntry
-from .ports import Verifier
+from .ports import Verdict, Verifier
 
 _SPACE = re.compile(r"\s+")
 
@@ -48,6 +49,15 @@ class CacheHit:
     tier: str            # "exact" | "semantic" | "verified" (band, strong verifier agreed)
     similarity: float
     verify_cost_usd: float = 0.0
+
+
+@dataclass
+class LookupResult:
+    """What one lookup returns: the hit (None on a miss) and what the strong verifier cost on
+    this lookup, hit or miss. Never shared between requests."""
+    hit: CacheHit | None
+    cost_usd: float = 0.0
+    strong_verifier_calls: int = 0
 
 
 @dataclass
@@ -81,7 +91,6 @@ class SemanticCache:
         self.entries: list[CacheEntry] = []
         self.vectors: np.ndarray | None = None
         self.stats = CacheStats()
-        self.last_lookup_cost_usd = 0.0
         self._lock = threading.Lock()
         for entry, vec in (store.load() if store else []):
             self._append(entry, vec)
@@ -114,66 +123,89 @@ class SemanticCache:
             return "invalidated"
         return None
 
+    def _judge(self, query: str, cached_query: str) -> Verdict:
+        """Strong-verifier call. Uses `judge` (verdict and its own cost) when the verifier has
+        it; a verifier with only `same_question` is treated as free."""
+        judge = getattr(self.strong_verifier, "judge", None)
+        if judge is not None:
+            return judge(query, cached_query)
+        return Verdict(bool(self.strong_verifier.same_question(query, cached_query)), 0.0)
+
     def lookup(self, query: str, qvec: np.ndarray, current_docs: dict[str, str] | None = None,
-               evidence_key: str | None = None) -> CacheHit | None:
+               evidence_key: str | None = None) -> LookupResult:
         """`current_docs` maps doc name to its current content hash; entries built from a doc
         that has since changed are dropped. `evidence_key` is the id of the top chunk retrieved
         for this query; with `require_same_evidence`, a semantic candidate must share it.
-        After the call `last_lookup_cost_usd` holds what the strong verifier spent, hit or miss."""
+
+        Returns the hit (or None) and what the strong verifier spent on this lookup, hit or miss.
+        Candidates are snapshotted under the lock; the checks, including the (slow, paid) strong
+        verifier, run outside it; stats and removals are applied under the lock afterwards, by
+        entry identity, because other requests may have changed the entries meanwhile. Stale
+        candidates (expired or invalidated) are removed and do not use up `max_candidates`."""
         with self._lock:
             self.stats.lookups += 1
-            self.last_lookup_cost_usd = 0.0
             if not self.entries:
-                return None
+                return LookupResult(None)
             key = normalise(query)
             sims = self.vectors @ qvec
-            order = [int(i) for i in np.argsort(-sims, kind="stable")[: self.max_candidates]]
-            # An exact match is tried first whatever its rank.
-            exact = [i for i, e in enumerate(self.entries) if normalise(e.query) == key]
             low = self.low_threshold
-            candidates = exact + [i for i in order if i not in exact and sims[i] >= low]
-            stale: list[int] = []
-            hit: CacheHit | None = None
-            strong_calls = 0
-            for i in candidates:
-                entry = self.entries[i]
-                reason = self._stale(entry, current_docs)
-                if reason:
-                    setattr(self.stats, reason, getattr(self.stats, reason) + 1)
-                    stale.append(i)
-                    continue
-                if i in exact:
-                    self.stats.exact_hits += 1
-                    hit = CacheHit(entry, "exact", float(sims[i]))
-                    break
-                if self.require_same_evidence and evidence_key != entry.evidence_key:
-                    self.stats.rejected_by_evidence += 1
-                    continue
-                if self.verifier and not self.verifier.same_question(query, entry.query):
-                    self.stats.rejected_by_verifier += 1
-                    continue
-                if sims[i] >= self.threshold:
-                    self.stats.semantic_hits += 1
-                    hit = CacheHit(entry, "semantic", float(sims[i]))
-                    break
-                # In the band: the strong verifier decides, once per lookup.
-                if strong_calls >= 1:
-                    continue
-                strong_calls += 1
-                self.stats.strong_verifier_calls += 1
-                agreed = self.strong_verifier.same_question(query, entry.query)
-                cost = float(getattr(self.strong_verifier, "last_cost_usd", 0.0))
-                self.stats.strong_verifier_cost_usd += cost
-                self.last_lookup_cost_usd += cost
-                if not agreed:
-                    self.stats.rejected_by_strong_verifier += 1
-                    continue
-                self.stats.verified_hits += 1
-                hit = CacheHit(entry, "verified", float(sims[i]), verify_cost_usd=cost)
+            # An exact match is tried first whatever its rank; then everything above the lowest
+            # threshold, most similar first.
+            exact = [i for i, e in enumerate(self.entries) if normalise(e.query) == key]
+            ranked = [int(i) for i in np.argsort(-sims, kind="stable") if sims[i] >= low and int(i) not in exact]
+            snapshot = [(self.entries[i], float(sims[i]), i in exact) for i in exact + ranked]
+
+        counts: dict[str, int] = {}
+        bump = lambda name: counts.__setitem__(name, counts.get(name, 0) + 1)
+        stale: list[CacheEntry] = []
+        hit: CacheHit | None = None
+        cost, strong_calls, examined = 0.0, 0, 0
+        for entry, sim, is_exact in snapshot:
+            if examined >= self.max_candidates:
                 break
-            for i in sorted(stale, reverse=True):
-                self._remove(i)
-            return hit
+            reason = self._stale(entry, current_docs)
+            if reason:
+                bump(reason)
+                stale.append(entry)
+                continue
+            examined += 1
+            if is_exact:
+                bump("exact_hits")
+                hit = CacheHit(entry, "exact", sim)
+                break
+            if self.require_same_evidence and evidence_key != entry.evidence_key:
+                bump("rejected_by_evidence")
+                continue
+            if self.verifier and not self.verifier.same_question(query, entry.query):
+                bump("rejected_by_verifier")
+                continue
+            if sim >= self.threshold:
+                bump("semantic_hits")
+                hit = CacheHit(entry, "semantic", sim)
+                break
+            # In the band: the strong verifier decides, once per lookup.
+            if strong_calls >= 1:
+                continue
+            verdict = self._judge(query, entry.query)      # may raise (budget, provider): not counted
+            strong_calls += 1
+            cost += verdict.cost_usd
+            if not verdict.same:
+                bump("rejected_by_strong_verifier")
+                continue
+            bump("verified_hits")
+            hit = CacheHit(entry, "verified", sim, verify_cost_usd=verdict.cost_usd)
+            break
+
+        with self._lock:
+            for name, n in counts.items():
+                setattr(self.stats, name, getattr(self.stats, name) + n)
+            self.stats.strong_verifier_calls += strong_calls
+            self.stats.strong_verifier_cost_usd += cost
+            for entry in stale:
+                i = next((j for j, e in enumerate(self.entries) if e is entry), None)
+                if i is not None:
+                    self._remove(i)
+        return LookupResult(hit, cost, strong_calls)
 
     def put(self, entry: CacheEntry, qvec: np.ndarray) -> None:
         with self._lock:
