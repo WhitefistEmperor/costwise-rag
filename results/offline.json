@@ -1,0 +1,34 @@
+{
+  "corpus": {
+    "documents": 12,
+    "chunks": 39,
+    "synthetic": true
+  },
+  "questions": {
+    "tune": 25,
+    "test": 35
+  },
+  "retrieval_test": {
+    "dense": {
+      "recall_at_k": 0.9714,
+      "mrr": 0.9714,
+      "found": 102,
+      "queries": 105,
+      "k": 4
+    },
+    "bm25": {
+      "recall_at_k": 0.9333,
+      "mrr": 0.904,
+      "found": 98,
+      "queries": 105,
+      "k": 4
+    },
+    "hybrid": {
+      "recall_at_k": 0.981,
+      "mrr": 0.9889,
+      "found": 103,
+      "queries": 105,
+      "k": 4
+    }
+  }
+}
