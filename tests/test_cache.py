@@ -216,3 +216,35 @@ def test_simulate_stream_reports_strong_verifier_calls():
     stream = [Query("A", "a", False, False), Query("A", "a again", False, True), Query("B", "b near a", False, False)]
     r = simulate_stream(stream, vecs, 0.99, None, candidate_threshold=0.8, strong_verifier=Oracle())
     assert r["hits"] == 1 and r["wrong_hits"] == 0 and r["strong_verifier_calls"] == 2
+
+
+def evidence_entry(query, key, tag=None):
+    return CacheEntry(query, "a", {}, "m", 0.0, 0.01, tag, evidence_key=key)
+
+
+def test_same_evidence_check_rejects_a_candidate_from_another_chunk():
+    cache = SemanticCache(clock=ZERO, threshold=0.9, require_same_evidence=True)
+    cache.put(evidence_entry("refund window for monthly plans", "refunds.md#0", tag="monthly"), vec(1, 0))
+    assert cache.lookup("refund window monthly", vec(1, 0.05), evidence_key="refunds.md#1").hit is None
+    assert cache.stats.rejected_by_evidence == 1
+    hit = cache.lookup("refund window monthly", vec(1, 0.05), evidence_key="refunds.md#0").hit
+    assert hit.tier == "semantic" and hit.entry.tag == "monthly"
+    assert cache.lookup("refund window for monthly plans", vec(1, 0), evidence_key="other#0").hit.tier == "exact"
+
+
+def test_same_evidence_check_is_off_unless_required():
+    cache = SemanticCache(clock=ZERO, threshold=0.9)
+    cache.put(evidence_entry("q", "a#0"), vec(1, 0))
+    assert cache.lookup("q2", vec(1, 0.05), evidence_key="b#0").hit is not None
+
+
+def test_evidence_key_survives_a_sqlite_round_trip(tmp_path):
+    path = tmp_path / "cache.db"
+    cache = SemanticCache(clock=ZERO, threshold=0.9, require_same_evidence=True, store=SQLiteCacheStore(path))
+    cache.put(evidence_entry("q1", "pricing.md#0", tag="t1"), vec(1, 0))
+    cache.put(evidence_entry("q2", None), vec(0, 1))
+    reloaded = SemanticCache(clock=ZERO, threshold=0.9, require_same_evidence=True, store=SQLiteCacheStore(path))
+    assert {e.query: e.evidence_key for e in reloaded.entries} == {"q1": "pricing.md#0", "q2": None}
+    assert reloaded.entries[0].tag == "t1"
+    assert reloaded.lookup("q1 again", vec(1, 0.05), evidence_key="pricing.md#0").hit.entry.query == "q1"
+    assert reloaded.lookup("q1 again", vec(1, 0.05), evidence_key="pricing.md#1").hit is None

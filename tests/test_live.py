@@ -61,11 +61,28 @@ def test_strong_verifier_flag_opens_the_band_and_bills_its_calls(live_settings):
     live_settings.tuned_path.write_text(json.dumps({"cache_threshold": 0.99, "cache_candidate_threshold": 0.3,
                                                     "cache_require_same_evidence": False, "route_threshold": 0.4}),
                                         encoding="utf-8")
-    out = run(live_settings, MockLLM(respond=respond), mock=True, max_cost_usd=1.0, seeds=(0,),
+    class Recording(MockLLM):
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self.billed = []                                    # (is verifier call, cost)
+
+        def complete(self, model, system, user, max_tokens):
+            r = super().complete(model, system, user, max_tokens)
+            self.billed.append(("Question A:" in user, r.cost_usd))
+            return r
+
+    llm = Recording(respond=respond)
+    out = run(live_settings, llm, mock=True, max_cost_usd=1.0, seeds=(0,),
               configs=["full"], embedder=HashEmbedder(), strong_verifier="llm")
     full = out["configs"]["full"]
-    assert out["strong_verifier"] == "llm" and full["strong_verifier_calls"] > 0
-    assert full["cache_hits"] > 0 and full["cost_usd"] <= out["total_spent_usd"] + 1e-9 <= 1.0
+    verifier_costs = [c for is_verifier, c in llm.billed if is_verifier]
+    assert out["strong_verifier"] == "llm" and full["strong_verifier_calls"] == len(verifier_costs) > 0
+    assert full["cache_hits"] > 0 and sum(verifier_costs) > 0
+    # The config cost is every call, verifier calls included, and equals what the budget saw.
+    assert full["cost_usd"] == pytest.approx(round(sum(c for _, c in llm.billed), 6), abs=1e-9)
+    assert full["cost_usd"] == full["llm_spent_usd"] == out["total_spent_usd"]
+    answers_only = sum(c for is_verifier, c in llm.billed if not is_verifier)
+    assert full["cost_usd"] > round(answers_only, 6)
     off = run(live_settings, MockLLM(respond=respond), mock=True, max_cost_usd=1.0, seeds=(0,),
               configs=["full"], embedder=HashEmbedder())
     assert off["configs"]["full"]["strong_verifier_calls"] == 0

@@ -84,6 +84,35 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
   | cache_only | 124/140 | $0.1955 | {'large': 84, 'cache': 56} | 56 (2 wrong) | 0 |
   | full | 124/140 | $0.0502 | {'small': 67, 'large': 17, 'cache': 56} | 56 (2 wrong) | 0 |
 
+- **Review fixes (15 Nov 2026),** one commit each, every one with a regression test. 148 tests
+  pass, none touch the network.
+  1. Live run: `OpenRouterLLM` retries 429/5xx/timeouts (2 retries, backoff) and every retry
+     passes the budget check; other errors and a 200 without `choices` raise `ProviderError`.
+     A provider error stops only the current config (marked `error`, partial results kept) and
+     the results file is always written, as strict JSON (`max_cost_usd` is null without a cap).
+     Paid runs refuse a model with no price unless `--price MODEL=IN,OUT` is given. Spend is
+     kept per config (`llm_spent_usd`, sums to `total_spent_usd`). `--live` builds its client
+     with the app's `build_llm`, the only place that reads `OPENROUTER_API_KEY`.
+  2. Cache: `lookup` returns a `LookupResult` (hit, verifier cost, calls); strong verifiers
+     return a `Verdict` with the cost of that call; the lock is not held during the strong
+     verifier call; stale candidates no longer use up `max_candidates`.
+  3. `KeyTermGuard`: numbers glued to letters ("800GB", "6h", "v2") are extracted and compared
+     exactly ("3,000" == "3000", "1.30" == "1.3"); entity extraction treats the first word of
+     each line or bullet as sentence-initial (chunk text keeps line breaks). Cache eval rerun:
+     thresholds and all cache numbers unchanged.
+  4. Hybrid fusion gives no BM25 rank credit to chunks with BM25 score 0; `load_corpus` moved
+     to `adapters/corpus.py` and a test keeps I/O out of `domain/`. Recall@4 unchanged (dense
+     102/105, BM25 98/105, hybrid 103/105); mock costs moved slightly (table above is current).
+  5. Router: each router uses its own tune-chosen threshold; cues match whole words (see the
+     Phase 3 note).
+  6. Dashboard: the mock badge respects `hidden`; every value put into `innerHTML` is escaped.
+     Percentiles use nearest rank (`domain/stats.py`) in the request log and the live eval.
+     A miss lists each source document once, like a hit.
+  7. Stronger tests (exact escalation cost, verifier cost inside the config cost, same-evidence
+     check, `evidence_key` SQLite round trip, every script and source file compiles); fixed the
+     broken f-string in `scripts/show_cache_eval.py`; removed the stale auto-save snapshot
+     `PROGRESS-2026-11-15.md` (its open issues are folded in below).
+
 **Phases 0 to 5 are done. What remains (Phase 6) spends OpenRouter credit and needs Sahil's
 go-ahead.** Command for the paid run (reads the key from the environment, never prints it):
 `PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --live --max-cost 0.50 --seeds 1 --strong-verifier llm`
@@ -100,9 +129,17 @@ about $0.25 to $0.35; two seeds may touch the $0.50 cap, in which case the run s
 - Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock
   numbers in results/live_mock.json are not real.
 - Cross-encoder and stronger embedding models need a download; not done without a yes.
-- `CrossEncoderVerifier` is only tested with an injected scorer, never with the real model.
+- `CrossEncoderVerifier` is only tested with an injected scorer, never with the real model;
+  `LLMVerifier` and `OpenRouterLLM` only with fake clients and `httpx.MockTransport`.
+- The learned router fits the 75 tune rows perfectly (97/105 on test), so it is a little over-fitted.
+- `KeyTermGuard` entity terms include UI labels and languages that the corpus really writes with
+  a capital mid-sentence (Settings, Developers, Billing, Export, Request, Restore, Center,
+  Drive, Type, English). They are not bullet artefacts (the corpus has no bullets), and no
+  stoplist was added; a substitution between two of them is treated as a different question.
+- Numbers glued to letters now count, so "2FA" carries the number 2; a paraphrase that drops
+  "2FA" no longer passes the guard. Thresholds tuned on tune did not change.
 - The repo lives in a folder the app made for this session; it is deleted if the session is
-  deleted. Move it to a permanent folder before relying on it.
+  deleted. The GitHub remote has every commit; move the folder before relying on it.
 
 ## How to run
 - Tests: `.venv/Scripts/python -m pytest -q`
@@ -113,7 +150,8 @@ about $0.25 to $0.35; two seeds may touch the $0.50 cap, in which case the run s
 - API smoke: `PYTHONPATH=src .venv/Scripts/python scripts/smoke_api.py`
 - Live eval dry run (mock, free): `PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --seeds 2`
 - Live eval paid run: add `--live --max-cost 0.50 --strong-verifier llm` (needs OPENROUTER_API_KEY;
-  do not run without a yes)
+  do not run without a yes). A model missing from `domain/pricing.py` needs
+  `--price MODEL=IN,OUT` (USD per million tokens) or the run refuses to start.
 - Router cue check: `PYTHONPATH=src .venv/Scripts/python scripts/filter_router_cues.py`
 - Tune-split cache diagnosis: `PYTHONPATH=src .venv/Scripts/python scripts/diagnose_cache.py 0.70`
 - Never paste Python with quotes into a bash heredoc here; write a script file and run it.

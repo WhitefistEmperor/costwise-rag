@@ -74,13 +74,31 @@ def test_pipeline_routes_easy_to_small_and_hard_to_large(chunks, retrievers, emb
     assert p.request_log.stats()["requests"] == 2 and p.request_log.stats()["by_route"] == {"small": 1, "large": 1}
 
 
+class RecordingLLM(MockLLM):
+    """MockLLM that keeps every LLMResult it returned."""
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.results = []
+
+    def complete(self, model, system, user, max_tokens):
+        r = super().complete(model, system, user, max_tokens)
+        self.results.append(r)
+        return r
+
+
 def test_small_model_abstention_escalates_to_large(chunks, retrievers, embedder):
-    llm = MockLLM(abstain_if=lambda model, user: model == "mock/small")
+    llm = RecordingLLM(abstain_if=lambda model, user: model == "mock/small")
     p = make_pipeline(chunks, retrievers, embedder, llm)
     a = p.ask("How much does Starter cost per month?")
     assert a.escalated and a.route == "large" and a.model == "mock/large" and ABSTAIN not in a.text
     assert [m for m, _ in llm.calls] == ["mock/small", "mock/large"]
-    assert a.prompt_tokens > 0 and a.cost_usd > cost_usd("mock/large", 0, 0)
+    small, large = llm.results
+    assert small.cost_usd > 0 and large.cost_usd > 0
+    assert a.cost_usd == small.cost_usd + large.cost_usd                 # both calls are paid
+    assert a.prompt_tokens == small.prompt_tokens + large.prompt_tokens
+    assert a.completion_tokens == small.completion_tokens + large.completion_tokens
+    assert a.baseline_cost_usd == large.cost_usd
     assert p.request_log.recent(1)[0]["escalated"] is True
 
 

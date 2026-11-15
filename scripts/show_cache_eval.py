@@ -14,8 +14,7 @@ for name, v in cache["variants"].items():
         print(f"    t={t}: hits {s['hits']}, wrong {s['wrong_hits']}, repeat recall {s['repeat_recall']}")
 
 ub = cache["two_threshold_upper_bound"]
-print(f"
-== two-threshold UPPER BOUND (perfect strong verifier; not a result): "
+print(f"\n== two-threshold UPPER BOUND (perfect strong verifier; not a result): "
       f"accept {ub['accept_threshold_from_tune']}, candidate {ub['candidate_threshold_from_tune']} (from tune)")
 print("  test stream:", ub["test_stream"])
 print("  verify all :", ub["test_stream_verify_all"])
