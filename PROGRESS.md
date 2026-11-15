@@ -28,7 +28,8 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
     5 wrong, 145 verifier calls; repeat recall 134/175 (76.6%). The 5 wrong hits are above the
     accept threshold, where the strong verifier is not asked.
   - UPPER BOUND, strong verifier checks every candidate (accept 0.99, candidate 0.60): 138 hits,
-    0 wrong, 164 calls; repeat recall 138/175 (78.9%).
+    0 wrong, 164 calls; repeat recall 138/175 (78.9%). This variant was added after the 5 test
+    wrong hits were seen; it is reported only and `data/tuned.json` does not use it.
   These bounds are what a real strong verifier could at best reach; real numbers need the paid
   live run.
 
@@ -39,12 +40,16 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
   picked on tune by balanced accuracy. 43 tests pass. `scripts/show_router_eval.py` prints it.
 
   Router numbers (test split, 105 texts: 21 hand-labelled hard, 84 easy; fitted on tune):
-  - heuristic, threshold 0.4: accuracy 93/105 (88.6%); 17/21 hard sent to large; 76/84 easy
-    kept small; 25/105 sent to large.
+  - heuristic, threshold 0.4: accuracy 93/105 (88.6%); 14/21 hard sent to large; 79/84 easy
+    kept small; 19/105 sent to large.
   - learned, threshold 0.5: accuracy 97/105 (92.4%); 18/21 hard sent to large; 79/84 easy kept
     small; 23/105 sent to large. (Tune: 75/75, so it is over-fitting a little on 75 rows.)
   - "hard" is a hand label, not an observed small-model failure; the live run decides whether
     the label matters.
+  - Disclosure: the first draft of the cue-word list was written after the hard questions of
+    both splits had been printed. The list was then filtered mechanically to cues that occur in
+    at least one tune text (`scripts/filter_router_cues.py`; 14 cues dropped) and the eval was
+    rerun; the numbers above are from that rerun. The learned router's numbers did not change.
 
 - **Phase 4:** `domain/pricing.py` (price table, cost maths), `domain/pipeline.py` (embed,
   retrieve, cache lookup with the top chunk as evidence key, route, generate, escalate on
@@ -60,7 +65,8 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
   cache only, full) over one long stream (test split, several seeds back to back), `BudgetedLLM`
   checks a hard `--max-cost` cap BEFORE every call and stops the run with the partial results
   marked. Mock dry run is the default; the paid run needs `--live` and `OPENROUTER_API_KEY`.
-  Every percentage is written next to its counts. 62 tests pass, none touch the network.
+  Every percentage is written next to its counts. `--strong-verifier llm` opens the cache band.
+  63 tests pass, none touch the network.
 
   Mock dry run (`results/live_mock.json`, 140 queries, 70 repeats).
   THESE NUMBERS ARE NOT REAL: the mock model echoes the retrieved context, so accuracy, cost and
@@ -76,9 +82,11 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
 
 **Phases 0 to 5 are done. What remains (Phase 6) spends OpenRouter credit and needs Sahil's
 go-ahead.** Command for the paid run (reads the key from the environment, never prints it):
-`PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --live --max-cost 0.50 --seeds 1`
-Estimate for one seed (70 queries x 5 configs, short answers): roughly $0.20 to $0.30; two seeds
-may touch the $0.50 cap, in which case the run stops and says so.
+`PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --live --max-cost 0.50 --seeds 1 --strong-verifier llm`
+`--strong-verifier llm` opens the cache band [0.60, 0.88) with the small-model YES/NO check;
+without it the run measures the guard-only cache. Estimate for one seed (70 queries x 5 configs,
+short answers, plus roughly one extra small-model call per two queries in the two cache configs):
+about $0.25 to $0.35; two seeds may touch the $0.50 cap, in which case the run stops and says so.
 
 ## Next steps (in order)
 1. Phase 6 (needs go-ahead): paid live run, then README with the real numbers and resume bullets.
@@ -100,6 +108,8 @@ may touch the $0.50 cap, in which case the run stops and says so.
 - API (mock model): `PYTHONPATH=src .venv/Scripts/python -m uvicorn costwise.app.api:app --reload`, then open http://127.0.0.1:8000/
 - API smoke: `PYTHONPATH=src .venv/Scripts/python scripts/smoke_api.py`
 - Live eval dry run (mock, free): `PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --seeds 2`
-- Live eval paid run: add `--live --max-cost 0.50` (needs OPENROUTER_API_KEY; do not run without a yes)
+- Live eval paid run: add `--live --max-cost 0.50 --strong-verifier llm` (needs OPENROUTER_API_KEY;
+  do not run without a yes)
+- Router cue check: `PYTHONPATH=src .venv/Scripts/python scripts/filter_router_cues.py`
 - Tune-split cache diagnosis: `PYTHONPATH=src .venv/Scripts/python scripts/diagnose_cache.py 0.70`
 - Never paste Python with quotes into a bash heredoc here; write a script file and run it.

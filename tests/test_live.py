@@ -72,3 +72,22 @@ def test_cli_defaults_to_mock_and_writes_marked_file(live_settings, monkeypatch,
     assert written["mock"] is True and list(written["configs"]) == ["full"] and result["mock"] is True
     with pytest.raises(SystemExit):
         live.main(["--live"])                                   # no key: refuses before any call
+
+
+def test_strong_verifier_flag_opens_the_band_and_bills_its_calls(live_settings):
+    def respond(model, system, user):
+        if "Question A:" in user:                               # verifier prompt
+            return "YES"
+        return user.split("Context:\n", 1)[-1].split("\n\nQuestion:", 1)[0]
+
+    live_settings.tuned_path.write_text(json.dumps({"cache_threshold": 0.99, "cache_candidate_threshold": 0.3,
+                                                    "cache_require_same_evidence": False, "route_threshold": 0.4}),
+                                        encoding="utf-8")
+    out = run(live_settings, MockLLM(respond=respond), mock=True, max_cost_usd=1.0, seeds=(0,),
+              configs=["full"], embedder=HashEmbedder(), strong_verifier="llm")
+    full = out["configs"]["full"]
+    assert out["strong_verifier"] == "llm" and full["strong_verifier_calls"] > 0
+    assert full["cache_hits"] > 0 and full["cost_usd"] <= out["total_spent_usd"] + 1e-9 <= 1.0
+    off = run(live_settings, MockLLM(respond=respond), mock=True, max_cost_usd=1.0, seeds=(0,),
+              configs=["full"], embedder=HashEmbedder())
+    assert off["configs"]["full"]["strong_verifier_calls"] == 0

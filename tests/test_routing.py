@@ -10,7 +10,7 @@ def search(retrievers, embedder, q, k=4):
 
 
 def test_features_shape_and_values(retrievers, embedder):
-    q = "Compare refund windows for monthly and annual plans, 7 or 30 days?"
+    q = "What is the total refund window between monthly and annual plans, 7 or 30 days?"
     f = dict(zip(FEATURE_NAMES, features(q, search(retrievers, embedder, q))))
     assert f["numbers"] == 2 and f["cues"] >= 1 and f["clauses"] >= 2
     assert 1 <= f["docs_in_top_k"] <= 3 and -1 <= f["top_score"] <= 1 and f["score_gap"] >= 0
@@ -20,7 +20,7 @@ def test_features_shape_and_values(retrievers, embedder):
 def test_heuristic_scores_multi_step_higher_than_lookup(retrievers, embedder):
     r = HeuristicRouter()
     easy = "How much does Starter cost per month?"
-    hard = "What is the total monthly cost of Team with 12 seats, including backups, compared with Starter?"
+    hard = "What is the total monthly cost of Team with 12 seats, and how often is it backed up?"
     assert r.score(hard, search(retrievers, embedder, hard)) > r.score(easy, search(retrievers, embedder, easy))
     assert decide(0.7, 0.5) == "large" and decide(0.2, 0.5) == "small"
 

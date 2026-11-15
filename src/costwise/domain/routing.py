@@ -23,12 +23,12 @@ from .models import Hit
 _WORD = re.compile(r"[a-z0-9.]+")
 _NUMBER = re.compile(r"\b\d+(?:\.\d+)?\b")
 
-# Cues that a question combines facts, compares, or computes something.
+# Cues that a question combines facts, compares, or computes something. The list was filtered
+# to cues that occur in at least one TUNE-split text (scripts/filter_router_cues.py), because the
+# first draft was written after the hard questions of both splits had been looked at.
 MULTI_PART_CUES = (
-    "compare", "comparison", "difference", "between", "both", "and what", "and how", "total",
-    "including", "include", "altogether", "overall", "cheapest", "lowest", "which plan",
-    "what plan", "do i need", "if i", "if a", "if my", "would it", "after upgrading", "full year",
-    "per year", "per hour", "in one hour", "maximum number", "at most", "longest", "alternative",
+    "between", "both", "and what", "and how", "total", "cheapest", "lowest", "which plan", "if i",
+    "if a", "after upgrading", "per hour", "in one hour", "maximum number", "at most", "longest",
     "and its", "and how long", "what does it cost and",
 )
 

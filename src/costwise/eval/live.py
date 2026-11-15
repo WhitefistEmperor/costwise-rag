@@ -136,7 +136,8 @@ def run_config(pipeline: Pipeline, stream: Sequence[Query], keywords: dict[str, 
 
 def run(settings: Settings, llm: LLMClient, mock: bool, max_cost_usd: float, split: str = "test",
         repeat_rate: float = 0.5, seeds: Sequence[int] = (0, 1), configs: Sequence[str] = tuple(CONFIGS),
-        embedder=None) -> dict:
+        embedder=None, strong_verifier: str = "none") -> dict:
+    settings.cache_strong_verifier = strong_verifier          # "none" | "llm": opens the cache band
     tuned = settings.load_tuned()
     chunks = load_corpus(settings.corpus_dir)
     embedder = embedder or build_embedder(settings)
@@ -154,7 +155,8 @@ def run(settings: Settings, llm: LLMClient, mock: bool, max_cost_usd: float, spl
         "models": {"small": settings.small_model, "large": settings.large_model},
         "split": split, "questions": len(questions), "stream_queries": len(stream),
         "stream_repeats": sum(q.repeat for q in stream), "repeat_rate": repeat_rate, "seeds": list(seeds),
-        "max_cost_usd": max_cost_usd, "tuned": {k: v for k, v in tuned.items() if k != "router_weights"},
+        "max_cost_usd": max_cost_usd, "strong_verifier": strong_verifier,
+        "tuned": {k: v for k, v in tuned.items() if k != "router_weights"},
         "configs": {}, "started": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
     for name in configs:
@@ -178,6 +180,8 @@ def main(argv: Sequence[str] | None = None) -> dict:
     ap.add_argument("--seeds", type=int, default=2, help="number of stream seeds run back to back")
     ap.add_argument("--repeat-rate", type=float, default=0.5)
     ap.add_argument("--configs", nargs="*", default=list(CONFIGS), choices=list(CONFIGS))
+    ap.add_argument("--strong-verifier", choices=["none", "llm"], default="none",
+                    help="llm: small-model YES/NO check opens the cache band [candidate, accept)")
     ap.add_argument("--out", default=None, help="output JSON (default results/live.json or results/live_mock.json)")
     args = ap.parse_args(argv)
     settings = Settings()
@@ -190,7 +194,7 @@ def main(argv: Sequence[str] | None = None) -> dict:
         llm = MockLLM()
     max_cost = args.max_cost if args.max_cost is not None else (0.50 if args.live else float("inf"))
     result = run(settings, llm, mock=not args.live, max_cost_usd=max_cost, repeat_rate=args.repeat_rate,
-                 seeds=range(args.seeds), configs=args.configs)
+                 seeds=range(args.seeds), configs=args.configs, strong_verifier=args.strong_verifier)
     out = ROOT / "results" / (args.out or ("live.json" if args.live else "live_mock.json"))
     out.parent.mkdir(exist_ok=True)
     out.write_text(json.dumps(result, indent=2), encoding="utf-8")
