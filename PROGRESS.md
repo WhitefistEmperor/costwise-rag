@@ -56,15 +56,37 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
   `app/dashboard.html` (marks mock runs as not real). 58 tests pass, none touch the network.
   `scripts/smoke_api.py` runs /ask end to end with the real embedder and the mock model.
 
+- **Phase 5:** `eval/live.py`: five configs (baseline always-large, always-small, router only,
+  cache only, full) over one long stream (test split, several seeds back to back), `BudgetedLLM`
+  checks a hard `--max-cost` cap BEFORE every call and stops the run with the partial results
+  marked. Mock dry run is the default; the paid run needs `--live` and `OPENROUTER_API_KEY`.
+  Every percentage is written next to its counts. 62 tests pass, none touch the network.
+
+  Mock dry run (`results/live_mock.json`, 140 queries, 70 repeats).
+  THESE NUMBERS ARE NOT REAL: the mock model echoes the retrieved context, so accuracy, cost and
+  latency only prove the harness runs end to end.
+
+  | config | correct | mock cost | routes | cache hits | escalations |
+  |---|---|---|---|---|---|
+  | baseline_always_large | 124/140 | $0.3242 | {'large': 140} | 0 (0 wrong) | 0 |
+  | always_small | 124/140 | $0.0162 | {'small': 140} | 0 (0 wrong) | 0 |
+  | router_only | 124/140 | $0.0816 | {'small': 112, 'large': 28} | 0 (0 wrong) | 0 |
+  | cache_only | 124/140 | $0.1956 | {'large': 84, 'cache': 56} | 56 (2 wrong) | 0 |
+  | full | 124/140 | $0.0502 | {'small': 67, 'large': 17, 'cache': 56} | 56 (2 wrong) | 0 |
+
+**Phases 0 to 5 are done. What remains (Phase 6) spends OpenRouter credit and needs Sahil's
+go-ahead.** Command for the paid run (reads the key from the environment, never prints it):
+`PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --live --max-cost 0.50 --seeds 1`
+Estimate for one seed (70 queries x 5 configs, short answers): roughly $0.20 to $0.30; two seeds
+may touch the $0.50 cap, in which case the run stops and says so.
+
 ## Next steps (in order)
-1. Phase 5: `eval/live.py` with five configs (always-large baseline, always-small, router only,
-   cache only, full), a hard `--max-cost` cap checked before every call, a `--mock` dry run
-   whose output file is marked as mock. Longer stream; counts next to every percentage.
-   Commit "Phase 5: live eval harness".
-2. Phase 6 needs Sahil's go-ahead (spends OpenRouter credit, estimated under $0.50).
+1. Phase 6 (needs go-ahead): paid live run, then README with the real numbers and resume bullets.
+2. Later (optional): Quora Question Pairs cache benchmark, Prometheus endpoint, Dockerfile.
 
 ## Open issues
-- Paid live eval not run; no cost, latency or answer-quality numbers exist yet.
+- Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock
+  numbers in results/live_mock.json are not real.
 - Cross-encoder and stronger embedding models need a download; not done without a yes.
 - `CrossEncoderVerifier` is only tested with an injected scorer, never with the real model.
 - The repo lives in a folder the app made for this session; it is deleted if the session is
@@ -77,5 +99,7 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
 - Router view: `.venv/Scripts/python scripts/show_router_eval.py`
 - API (mock model): `PYTHONPATH=src .venv/Scripts/python -m uvicorn costwise.app.api:app --reload`, then open http://127.0.0.1:8000/
 - API smoke: `PYTHONPATH=src .venv/Scripts/python scripts/smoke_api.py`
+- Live eval dry run (mock, free): `PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --seeds 2`
+- Live eval paid run: add `--live --max-cost 0.50` (needs OPENROUTER_API_KEY; do not run without a yes)
 - Tune-split cache diagnosis: `PYTHONPATH=src .venv/Scripts/python scripts/diagnose_cache.py 0.70`
 - Never paste Python with quotes into a bash heredoc here; write a script file and run it.

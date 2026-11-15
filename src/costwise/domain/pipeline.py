@@ -51,7 +51,9 @@ class Pipeline:
     request_log: RequestLog | None = None
     clock: Callable[[], float] = time.time
 
-    def ask(self, query: str) -> Answer:
+    def ask(self, query: str, tag: str | None = None) -> Answer:
+        """`tag` is eval-only: the id of the question asked, stored on the cache entry so a
+        later hit can be graded as right or wrong."""
         t0 = time.perf_counter()
         qvec = self.embedder.encode([query])[0]
         hits = self.retriever.search(query, qvec, self.top_k)
@@ -89,7 +91,7 @@ class Pipeline:
 
         if self.cache is not None and not abstained(result.text):
             entry = CacheEntry(query, result.text, {h.chunk.doc: h.chunk.doc_hash for h in hits}, model,
-                               self.clock(), baseline, evidence_key=evidence_key)
+                               self.clock(), baseline, tag=tag, evidence_key=evidence_key)
             self.cache.put(entry, qvec)
 
         answer = Answer(query, result.text, route, model, sources, route_score=None if score is None else round(score, 4),

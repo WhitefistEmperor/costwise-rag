@@ -1,0 +1,139 @@
+{
+  "mock": true,
+  "note": "MOCK MODEL: cost, latency and accuracy are NOT real; they only prove the harness runs.",
+  "models": {
+    "small": "anthropic/claude-haiku-5.5",
+    "large": "anthropic/claude-sonnet-5.5"
+  },
+  "split": "test",
+  "questions": 35,
+  "stream_queries": 140,
+  "stream_repeats": 70,
+  "repeat_rate": 0.5,
+  "seeds": [
+    0,
+    1
+  ],
+  "max_cost_usd": Infinity,
+  "tuned": {
+    "cache_threshold": 0.88,
+    "cache_candidate_threshold": 0.6,
+    "cache_verifier": "key_term_guard",
+    "cache_require_same_evidence": true,
+    "route_threshold": 0.5
+  },
+  "configs": {
+    "baseline_always_large": {
+      "queries": 140,
+      "correct": 124,
+      "accuracy": 0.8857,
+      "cost_usd": 0.324212,
+      "cost_per_query_usd": 0.002316,
+      "always_large_cost_usd": 0.324212,
+      "latency_ms_p50": 15.7,
+      "latency_ms_p95": 23.9,
+      "routes": {
+        "large": 140
+      },
+      "cache_hits": 0,
+      "cache_hit_rate": 0.0,
+      "wrong_cache_hits": 0,
+      "correct_on_cache_hits": 0,
+      "escalations": 0,
+      "abstained_final": 0,
+      "strong_verifier_calls": 0,
+      "stopped": null
+    },
+    "always_small": {
+      "queries": 140,
+      "correct": 124,
+      "accuracy": 0.8857,
+      "cost_usd": 0.016211,
+      "cost_per_query_usd": 0.000116,
+      "always_large_cost_usd": 0.324212,
+      "latency_ms_p50": 15.2,
+      "latency_ms_p95": 19.3,
+      "routes": {
+        "small": 140
+      },
+      "cache_hits": 0,
+      "cache_hit_rate": 0.0,
+      "wrong_cache_hits": 0,
+      "correct_on_cache_hits": 0,
+      "escalations": 0,
+      "abstained_final": 0,
+      "strong_verifier_calls": 0,
+      "stopped": null
+    },
+    "router_only": {
+      "queries": 140,
+      "correct": 124,
+      "accuracy": 0.8857,
+      "cost_usd": 0.081607,
+      "cost_per_query_usd": 0.000583,
+      "always_large_cost_usd": 0.324212,
+      "latency_ms_p50": 15.2,
+      "latency_ms_p95": 17.7,
+      "routes": {
+        "small": 112,
+        "large": 28
+      },
+      "cache_hits": 0,
+      "cache_hit_rate": 0.0,
+      "wrong_cache_hits": 0,
+      "correct_on_cache_hits": 0,
+      "escalations": 0,
+      "abstained_final": 0,
+      "strong_verifier_calls": 0,
+      "stopped": null
+    },
+    "cache_only": {
+      "queries": 140,
+      "correct": 124,
+      "accuracy": 0.8857,
+      "cost_usd": 0.195616,
+      "cost_per_query_usd": 0.001397,
+      "always_large_cost_usd": 0.323448,
+      "latency_ms_p50": 15.5,
+      "latency_ms_p95": 18.5,
+      "routes": {
+        "large": 84,
+        "cache": 56
+      },
+      "cache_hits": 56,
+      "cache_hit_rate": 0.4,
+      "wrong_cache_hits": 2,
+      "correct_on_cache_hits": 49,
+      "escalations": 0,
+      "abstained_final": 0,
+      "strong_verifier_calls": 0,
+      "stopped": null
+    },
+    "full": {
+      "queries": 140,
+      "correct": 124,
+      "accuracy": 0.8857,
+      "cost_usd": 0.050239,
+      "cost_per_query_usd": 0.000359,
+      "always_large_cost_usd": 0.323448,
+      "latency_ms_p50": 15.8,
+      "latency_ms_p95": 19.8,
+      "routes": {
+        "small": 67,
+        "large": 17,
+        "cache": 56
+      },
+      "cache_hits": 56,
+      "cache_hit_rate": 0.4,
+      "wrong_cache_hits": 2,
+      "correct_on_cache_hits": 49,
+      "escalations": 0,
+      "abstained_final": 0,
+      "strong_verifier_calls": 0,
+      "stopped": null
+    }
+  },
+  "started": "2026-11-15 17:07:11",
+  "total_spent_usd": 0.667885,
+  "total_llm_calls": 588
+}
