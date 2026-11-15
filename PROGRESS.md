@@ -32,20 +32,32 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
   These bounds are what a real strong verifier could at best reach; real numbers need the paid
   live run.
 
+- **Phase 3:** `domain/routing.py`: 7 features (length, numbers, multi-part cues, clauses,
+  distinct docs in top-k, top dense score, score gap), `HeuristicRouter` (rule weights),
+  `LearnedRouter` (logistic regression, class-balanced, weights stored as plain numbers in
+  `data/tuned.json`), `decide(score, threshold)`. Router eval in `eval/offline.py`; thresholds
+  picked on tune by balanced accuracy. 43 tests pass. `scripts/show_router_eval.py` prints it.
+
+  Router numbers (test split, 105 texts: 21 hand-labelled hard, 84 easy; fitted on tune):
+  - heuristic, threshold 0.4: accuracy 93/105 (88.6%); 17/21 hard sent to large; 76/84 easy
+    kept small; 25/105 sent to large.
+  - learned, threshold 0.5: accuracy 97/105 (92.4%); 18/21 hard sent to large; 79/84 easy kept
+    small; 23/105 sent to large. (Tune: 75/75, so it is over-fitting a little on 75 rows.)
+  - "hard" is a hand label, not an observed small-model failure; the live run decides whether
+    the label matters.
+
 ## Next steps (in order)
-1. Phase 3: router (`domain/routing.py`: features, HeuristicRouter, LearnedRouter), router eval
-   on the test split (fit on tune), tests. Commit "Phase 3: cost-aware router".
-2. Phase 4: `domain/pricing.py`, `domain/pipeline.py`, `adapters/llm.py` (OpenRouterLLM,
+1. Phase 4: `domain/pricing.py`, `domain/pipeline.py`, `adapters/llm.py` (OpenRouterLLM,
    MockLLM), request log in `adapters/storage.py`, `app/container.py`, `app/api.py`,
    `app/dashboard.html`, tests. Pipeline order: embed, retrieve, cache lookup (top chunk id as
    evidence key; add `cache.last_lookup_cost_usd` to the request cost), route, generate, store,
    log. Mock model is the default; the paid client needs an explicit setting and the key from
    the environment only. Commit "Phase 4: pipeline, API and dashboard".
-3. Phase 5: `eval/live.py` with five configs (always-large baseline, always-small, router only,
+2. Phase 5: `eval/live.py` with five configs (always-large baseline, always-small, router only,
    cache only, full), a hard `--max-cost` cap checked before every call, a `--mock` dry run
    whose output file is marked as mock. Longer stream; counts next to every percentage.
    Commit "Phase 5: live eval harness".
-4. Phase 6 needs Sahil's go-ahead (spends OpenRouter credit, estimated under $0.50).
+3. Phase 6 needs Sahil's go-ahead (spends OpenRouter credit, estimated under $0.50).
 
 ## Open issues
 - Paid live eval not run; no cost, latency or answer-quality numbers exist yet.
@@ -58,5 +70,6 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
 - Tests: `.venv/Scripts/python -m pytest -q`
 - Offline eval: `PYTHONPATH=src .venv/Scripts/python -m costwise.eval.offline`
 - Cache view: `PYTHONPATH=src .venv/Scripts/python scripts/show_cache_eval.py`
+- Router view: `.venv/Scripts/python scripts/show_router_eval.py`
 - Tune-split cache diagnosis: `PYTHONPATH=src .venv/Scripts/python scripts/diagnose_cache.py 0.70`
 - Never paste Python with quotes into a bash heredoc here; write a script file and run it.

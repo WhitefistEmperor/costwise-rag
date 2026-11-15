@@ -2,5 +2,45 @@
   "cache_threshold": 0.88,
   "cache_candidate_threshold": 0.6,
   "cache_verifier": "key_term_guard",
-  "cache_require_same_evidence": true
+  "cache_require_same_evidence": true,
+  "route_threshold": 0.5,
+  "router_weights": {
+    "features": [
+      "words",
+      "numbers",
+      "cues",
+      "clauses",
+      "docs_in_top_k",
+      "top_score",
+      "score_gap"
+    ],
+    "coef": [
+      2.001655,
+      0.341858,
+      1.036715,
+      1.476588,
+      0.971592,
+      0.149991,
+      -0.210264
+    ],
+    "intercept": -0.714245,
+    "mean": [
+      1.066667,
+      0.08,
+      0.36,
+      0.386667,
+      2.68,
+      0.535536,
+      0.149068
+    ],
+    "scale": [
+      0.371782,
+      0.391918,
+      0.723694,
+      0.79822,
+      0.656455,
+      0.08194,
+      0.108788
+    ]
+  }
 }

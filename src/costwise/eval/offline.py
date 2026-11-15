@@ -17,7 +17,8 @@ from ..adapters.verifiers import KeyTermGuard
 from ..domain.cache import SemanticCache
 from ..domain.chunking import load_corpus
 from ..domain.models import CacheEntry
-from ..domain.ports import Embedder, Verifier
+from ..domain.ports import Embedder, Router, Verifier
+from ..domain.routing import FEATURE_NAMES, HeuristicRouter, LearnedRouter, decide, features
 from ..settings import ROOT, Settings
 from .dataset import Query, all_texts, build_stream, load_questions
 
@@ -199,6 +200,64 @@ def eval_cache(embedder: Embedder, retriever, tune: Sequence[dict], test: Sequen
     return out
 
 
+# ------------------------------------------------------------------- router
+
+ROUTE_GRID = [round(0.1 * i, 1) for i in range(1, 10)]     # 0.1 .. 0.9
+
+
+def router_rows(retriever, embedder: Embedder, questions: Sequence[dict], k: int) -> list[tuple[str, list, int]]:
+    """(text, hits, label) per question text; label 1 = hand-labelled hard."""
+    texts = [(t, q["difficulty"] == "hard") for q in questions for t in all_texts(q)]
+    vecs = embedder.encode([t for t, _ in texts])
+    return [(t, retriever.search(t, v, k), int(hard)) for (t, hard), v in zip(texts, vecs)]
+
+
+def router_counts(router: Router, rows: Sequence[tuple[str, list, int]], threshold: float) -> dict:
+    hard_to_large = easy_to_small = 0
+    hard = sum(label for _, _, label in rows)
+    for text, hits, label in rows:
+        large = decide(router.score(text, hits), threshold) == "large"
+        hard_to_large += label and large
+        easy_to_small += (not label) and (not large)
+    n = len(rows)
+    return {"threshold": threshold, "queries": n, "hard": hard, "easy": n - hard,
+            "hard_to_large": hard_to_large, "easy_to_small": easy_to_small,
+            "sent_to_large": hard_to_large + (n - hard - easy_to_small),
+            "accuracy": round((hard_to_large + easy_to_small) / n, 4),
+            "hard_recall": round(hard_to_large / hard, 4) if hard else None,
+            "easy_kept_small": round(easy_to_small / (n - hard), 4) if n > hard else None}
+
+
+def _balanced(c: dict) -> float:
+    return ((c["hard_recall"] or 0.0) + (c["easy_kept_small"] or 0.0)) / 2
+
+
+def tune_route_threshold(router: Router, rows) -> float:
+    """Threshold on the tune rows with the best balanced accuracy; ties go to the higher
+    threshold (fewer large calls)."""
+    return max(ROUTE_GRID, key=lambda t: (_balanced(router_counts(router, rows, t)), t))
+
+
+def eval_router(retriever, embedder: Embedder, tune: Sequence[dict], test: Sequence[dict], k: int) -> tuple[dict, dict]:
+    """Fits the learned router and both thresholds on tune; reports on test. Returns
+    (results, learned weights)."""
+    tune_rows, test_rows = router_rows(retriever, embedder, tune, k), router_rows(retriever, embedder, test, k)
+    learned = LearnedRouter.fit([features(t, h) for t, h, _ in tune_rows], [l for _, _, l in tune_rows])
+    out = {"note": "'hard' is a hand label (multi-step questions), not an observed small-model "
+                   "failure. Thresholds and weights fitted on tune, reported on test.",
+           "features": list(FEATURE_NAMES), "routers": {}}
+    for router in (HeuristicRouter(), learned):
+        threshold = tune_route_threshold(router, tune_rows)
+        out["routers"][router.name] = {
+            "threshold_from_tune": threshold,
+            "tune": router_counts(router, tune_rows, threshold),
+            "test": router_counts(router, test_rows, threshold),
+            "test_by_threshold": [router_counts(router, test_rows, t) for t in ROUTE_GRID],
+        }
+    return out, {"route_threshold": out["routers"]["learned"]["threshold_from_tune"],
+                 "router_weights": learned.to_weights()}
+
+
 # --------------------------------------------------------------------- main
 
 def run(settings: Settings | None = None) -> tuple[dict, dict]:
@@ -217,16 +276,18 @@ def run(settings: Settings | None = None) -> tuple[dict, dict]:
         "same_evidence": (None, True),
         "guard_and_evidence": (guard, True),
     }, upper_bound_for="guard_and_evidence")
+    router, router_tuned = eval_router(retrievers["hybrid"], embedder, tune, test, settings.top_k)
     results = {
         "corpus": {"documents": len({c.doc for c in chunks}), "chunks": len(chunks), "synthetic": True},
         "questions": {"tune": len(tune), "test": len(test), "texts_per_question": 3},
         "retrieval_test": eval_retrieval(retrievers, embedder, test, settings.top_k),
         "cache": cache,
+        "router": router,
     }
     ub = cache["two_threshold_upper_bound"]
     tuned = {"cache_threshold": ub["accept_threshold_from_tune"],
              "cache_candidate_threshold": ub["candidate_threshold_from_tune"],
-             "cache_verifier": guard.name, "cache_require_same_evidence": True}
+             "cache_verifier": guard.name, "cache_require_same_evidence": True, **router_tuned}
     return results, tuned
 
 

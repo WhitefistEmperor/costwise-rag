@@ -697,5 +697,293 @@
         "repeat_recall": 0.7886
       }
     }
+  },
+  "router": {
+    "note": "'hard' is a hand label (multi-step questions), not an observed small-model failure. Thresholds and weights fitted on tune, reported on test.",
+    "features": [
+      "words",
+      "numbers",
+      "cues",
+      "clauses",
+      "docs_in_top_k",
+      "top_score",
+      "score_gap"
+    ],
+    "routers": {
+      "heuristic": {
+        "threshold_from_tune": 0.4,
+        "tune": {
+          "threshold": 0.4,
+          "queries": 75,
+          "hard": 21,
+          "easy": 54,
+          "hard_to_large": 18,
+          "easy_to_small": 50,
+          "sent_to_large": 22,
+          "accuracy": 0.9067,
+          "hard_recall": 0.8571,
+          "easy_kept_small": 0.9259
+        },
+        "test": {
+          "threshold": 0.4,
+          "queries": 105,
+          "hard": 21,
+          "easy": 84,
+          "hard_to_large": 17,
+          "easy_to_small": 76,
+          "sent_to_large": 25,
+          "accuracy": 0.8857,
+          "hard_recall": 0.8095,
+          "easy_kept_small": 0.9048
+        },
+        "test_by_threshold": [
+          {
+            "threshold": 0.1,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 19,
+            "easy_to_small": 27,
+            "sent_to_large": 76,
+            "accuracy": 0.4381,
+            "hard_recall": 0.9048,
+            "easy_kept_small": 0.3214
+          },
+          {
+            "threshold": 0.2,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 19,
+            "easy_to_small": 29,
+            "sent_to_large": 74,
+            "accuracy": 0.4571,
+            "hard_recall": 0.9048,
+            "easy_kept_small": 0.3452
+          },
+          {
+            "threshold": 0.3,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 18,
+            "easy_to_small": 29,
+            "sent_to_large": 73,
+            "accuracy": 0.4476,
+            "hard_recall": 0.8571,
+            "easy_kept_small": 0.3452
+          },
+          {
+            "threshold": 0.4,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 17,
+            "easy_to_small": 76,
+            "sent_to_large": 25,
+            "accuracy": 0.8857,
+            "hard_recall": 0.8095,
+            "easy_kept_small": 0.9048
+          },
+          {
+            "threshold": 0.5,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 17,
+            "easy_to_small": 83,
+            "sent_to_large": 18,
+            "accuracy": 0.9524,
+            "hard_recall": 0.8095,
+            "easy_kept_small": 0.9881
+          },
+          {
+            "threshold": 0.6,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 17,
+            "easy_to_small": 83,
+            "sent_to_large": 18,
+            "accuracy": 0.9524,
+            "hard_recall": 0.8095,
+            "easy_kept_small": 0.9881
+          },
+          {
+            "threshold": 0.7,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 16,
+            "easy_to_small": 83,
+            "sent_to_large": 17,
+            "accuracy": 0.9429,
+            "hard_recall": 0.7619,
+            "easy_kept_small": 0.9881
+          },
+          {
+            "threshold": 0.8,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 13,
+            "easy_to_small": 84,
+            "sent_to_large": 13,
+            "accuracy": 0.9238,
+            "hard_recall": 0.619,
+            "easy_kept_small": 1.0
+          },
+          {
+            "threshold": 0.9,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 13,
+            "easy_to_small": 84,
+            "sent_to_large": 13,
+            "accuracy": 0.9238,
+            "hard_recall": 0.619,
+            "easy_kept_small": 1.0
+          }
+        ]
+      },
+      "learned": {
+        "threshold_from_tune": 0.5,
+        "tune": {
+          "threshold": 0.5,
+          "queries": 75,
+          "hard": 21,
+          "easy": 54,
+          "hard_to_large": 21,
+          "easy_to_small": 54,
+          "sent_to_large": 21,
+          "accuracy": 1.0,
+          "hard_recall": 1.0,
+          "easy_kept_small": 1.0
+        },
+        "test": {
+          "threshold": 0.5,
+          "queries": 105,
+          "hard": 21,
+          "easy": 84,
+          "hard_to_large": 18,
+          "easy_to_small": 79,
+          "sent_to_large": 23,
+          "accuracy": 0.9238,
+          "hard_recall": 0.8571,
+          "easy_kept_small": 0.9405
+        },
+        "test_by_threshold": [
+          {
+            "threshold": 0.1,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 19,
+            "easy_to_small": 54,
+            "sent_to_large": 49,
+            "accuracy": 0.6952,
+            "hard_recall": 0.9048,
+            "easy_kept_small": 0.6429
+          },
+          {
+            "threshold": 0.2,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 18,
+            "easy_to_small": 68,
+            "sent_to_large": 34,
+            "accuracy": 0.819,
+            "hard_recall": 0.8571,
+            "easy_kept_small": 0.8095
+          },
+          {
+            "threshold": 0.3,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 18,
+            "easy_to_small": 76,
+            "sent_to_large": 26,
+            "accuracy": 0.8952,
+            "hard_recall": 0.8571,
+            "easy_kept_small": 0.9048
+          },
+          {
+            "threshold": 0.4,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 18,
+            "easy_to_small": 78,
+            "sent_to_large": 24,
+            "accuracy": 0.9143,
+            "hard_recall": 0.8571,
+            "easy_kept_small": 0.9286
+          },
+          {
+            "threshold": 0.5,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 18,
+            "easy_to_small": 79,
+            "sent_to_large": 23,
+            "accuracy": 0.9238,
+            "hard_recall": 0.8571,
+            "easy_kept_small": 0.9405
+          },
+          {
+            "threshold": 0.6,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 18,
+            "easy_to_small": 81,
+            "sent_to_large": 21,
+            "accuracy": 0.9429,
+            "hard_recall": 0.8571,
+            "easy_kept_small": 0.9643
+          },
+          {
+            "threshold": 0.7,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 18,
+            "easy_to_small": 81,
+            "sent_to_large": 21,
+            "accuracy": 0.9429,
+            "hard_recall": 0.8571,
+            "easy_kept_small": 0.9643
+          },
+          {
+            "threshold": 0.8,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 18,
+            "easy_to_small": 84,
+            "sent_to_large": 18,
+            "accuracy": 0.9714,
+            "hard_recall": 0.8571,
+            "easy_kept_small": 1.0
+          },
+          {
+            "threshold": 0.9,
+            "queries": 105,
+            "hard": 21,
+            "easy": 84,
+            "hard_to_large": 16,
+            "easy_to_small": 84,
+            "sent_to_large": 16,
+            "accuracy": 0.9524,
+            "hard_recall": 0.7619,
+            "easy_kept_small": 1.0
+          }
+        ]
+      }
+    }
   }
 }
