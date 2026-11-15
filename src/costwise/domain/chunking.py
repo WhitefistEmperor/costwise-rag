@@ -17,7 +17,9 @@ def chunk_markdown(doc: str, text: str, doc_hash: str) -> list[Chunk]:
     body: list[str] = []
 
     def flush() -> None:
-        content = " ".join(line.strip() for line in body if line.strip())
+        # Line breaks are kept: embedders and BM25 treat them as spaces, and the guard's entity
+        # extraction needs them to know where a line or bullet starts.
+        content = "\n".join(line.strip() for line in body if line.strip())
         if content:
             head = f"{title} - {heading}" if heading else title
             sections.append(f"{head}\n{content}")

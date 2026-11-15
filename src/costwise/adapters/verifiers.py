@@ -5,6 +5,8 @@ revised once from a diagnosis of the TUNE split only:
 
   1. The numbers in the two questions must be the same set. A question that adds a number
      ("Team with 12 seats and 1.3 TB") asks something different from the one without it.
+     Numbers are found even when glued to letters ("800GB", "6h", "v2") and compared exactly
+     ("3,000" == "3000", "1.30" == "1.3", no rounding).
   2. For all other key terms, the questions conflict when EACH has a term the other lacks (a
      substitution, such as "Team" for "Business"). One side merely adding a term is not a
      conflict, because paraphrases often add or drop words.
@@ -20,14 +22,22 @@ from __future__ import annotations
 
 import re
 import threading
+from decimal import Decimal
 from typing import Callable, Iterable, Sequence
 
 from ..domain.models import Chunk
 from ..domain.ports import LLMClient, Verdict
 
 _TOKEN = re.compile(r"[A-Za-z0-9]+(?:\.[0-9]+)?")
-_NUMBER = re.compile(r"[0-9]+(?:\.[0-9]+)?")
+# A number anywhere, also glued to letters ("800GB", "6h", "v2"); "3,000" only in the thousands shape.
+_NUMBER = re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?")
 _SENTENCE = re.compile(r"(?<=[.!?:;])\s+")
+_LIST_MARK = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
+
+
+def number_key(text: str) -> str:
+    """Exact canonical form of a number: "3,000" -> "3000", "1.30" -> "1.3". No rounding."""
+    return format(Decimal(text.replace(",", "")).normalize(), "f")
 
 # word -> canonical contrast label. Words with different labels in the same group conflict.
 CONTRAST_GROUPS: list[dict[str, str]] = [
@@ -42,14 +52,17 @@ _CONTRAST = {word: label for group in CONTRAST_GROUPS for word, label in group.i
 
 
 def extract_entity_terms(chunks: Iterable[Chunk]) -> set[str]:
-    """Lower-cased words that appear with a capital letter away from the start of a sentence."""
+    """Lower-cased words that appear with a capital letter away from the start of a sentence.
+    Each source line (chunk text keeps the document's line breaks) and each list item starts a
+    sentence, so the first word of a bullet is not mistaken for a mid-sentence capital."""
     terms: set[str] = set()
     for chunk in chunks:
         body = chunk.text.split("\n", 1)[-1]          # drop the "Title - Heading" line
-        for sentence in _SENTENCE.split(body):
-            for token in _TOKEN.findall(sentence)[1:]:
-                if any(c.isupper() for c in token) and not token[0].isdigit():
-                    terms.add(token.lower())
+        for line in body.splitlines():
+            for sentence in _SENTENCE.split(_LIST_MARK.sub("", line)):
+                for token in _TOKEN.findall(sentence)[1:]:
+                    if any(c.isupper() for c in token) and not token[0].isdigit():
+                        terms.add(token.lower())
     return terms
 
 
@@ -64,11 +77,12 @@ class KeyTermGuard:
         return cls(extract_entity_terms(chunks))
 
     def key_terms(self, question: str) -> set[str]:
-        out: set[str] = set()
-        for token in _TOKEN.findall(question.lower()):
-            if _NUMBER.fullmatch(token):
-                out.add(f"num:{float(token):g}")
-            elif token in self.entity_terms:
+        q = question.lower()
+        out: set[str] = {f"num:{number_key(m.group())}" for m in _NUMBER.finditer(q)}
+        for token in _TOKEN.findall(q):
+            if token[0].isdigit():
+                continue                                # numbers are handled above
+            if token in self.entity_terms:
                 out.add(token)
             elif token in _CONTRAST:
                 out.add(_CONTRAST[token])
