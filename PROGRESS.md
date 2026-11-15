@@ -46,18 +46,22 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
   - "hard" is a hand label, not an observed small-model failure; the live run decides whether
     the label matters.
 
+- **Phase 4:** `domain/pricing.py` (price table, cost maths), `domain/pipeline.py` (embed,
+  retrieve, cache lookup with the top chunk as evidence key, route, generate, escalate on
+  INSUFFICIENT_CONTEXT, store, log; strong-verifier cost charged to the request), `adapters/llm.py`
+  (`MockLLM` default, `OpenRouterLLM` with real per-call cost from `usage.cost`, built only when
+  `COSTWISE_LLM=openrouter` and the key is in `OPENROUTER_API_KEY`), `SQLiteRequestLog` with
+  stats (cost, always-large baseline, saving, p50/p95, route split, escalations),
+  `app/container.py`, `app/api.py` (POST /ask, GET /stats, /recent, /cache, / dashboard),
+  `app/dashboard.html` (marks mock runs as not real). 58 tests pass, none touch the network.
+  `scripts/smoke_api.py` runs /ask end to end with the real embedder and the mock model.
+
 ## Next steps (in order)
-1. Phase 4: `domain/pricing.py`, `domain/pipeline.py`, `adapters/llm.py` (OpenRouterLLM,
-   MockLLM), request log in `adapters/storage.py`, `app/container.py`, `app/api.py`,
-   `app/dashboard.html`, tests. Pipeline order: embed, retrieve, cache lookup (top chunk id as
-   evidence key; add `cache.last_lookup_cost_usd` to the request cost), route, generate, store,
-   log. Mock model is the default; the paid client needs an explicit setting and the key from
-   the environment only. Commit "Phase 4: pipeline, API and dashboard".
-2. Phase 5: `eval/live.py` with five configs (always-large baseline, always-small, router only,
+1. Phase 5: `eval/live.py` with five configs (always-large baseline, always-small, router only,
    cache only, full), a hard `--max-cost` cap checked before every call, a `--mock` dry run
    whose output file is marked as mock. Longer stream; counts next to every percentage.
    Commit "Phase 5: live eval harness".
-3. Phase 6 needs Sahil's go-ahead (spends OpenRouter credit, estimated under $0.50).
+2. Phase 6 needs Sahil's go-ahead (spends OpenRouter credit, estimated under $0.50).
 
 ## Open issues
 - Paid live eval not run; no cost, latency or answer-quality numbers exist yet.
@@ -71,5 +75,7 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
 - Offline eval: `PYTHONPATH=src .venv/Scripts/python -m costwise.eval.offline`
 - Cache view: `PYTHONPATH=src .venv/Scripts/python scripts/show_cache_eval.py`
 - Router view: `.venv/Scripts/python scripts/show_router_eval.py`
+- API (mock model): `PYTHONPATH=src .venv/Scripts/python -m uvicorn costwise.app.api:app --reload`, then open http://127.0.0.1:8000/
+- API smoke: `PYTHONPATH=src .venv/Scripts/python scripts/smoke_api.py`
 - Tune-split cache diagnosis: `PYTHONPATH=src .venv/Scripts/python scripts/diagnose_cache.py 0.70`
 - Never paste Python with quotes into a bash heredoc here; write a script file and run it.

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Costwise RAG</title>
+<style>
+  :root { --bg: #f7f7f5; --fg: #1d1d1b; --muted: #6b6b66; --card: #ffffff; --line: #e3e3de; --accent: #1f6f5f; --warn: #b4530a; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #15161a; --fg: #ecece8; --muted: #9a9a94; --card: #1e2027; --line: #2d2f38; --accent: #5fc7ad; --warn: #f0a35a; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 4px; } h2 { font-size: 15px; margin: 0 0 8px; color: var(--muted); font-weight: 600; }
+  .sub { color: var(--muted); margin-bottom: 16px; }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; background: var(--warn); color: #fff; margin-left: 8px; vertical-align: middle; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  .num { font-size: 22px; font-weight: 650; } .lbl { color: var(--muted); font-size: 12px; }
+  form { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  input { flex: 1 1 240px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg); font: inherit; }
+  button { padding: 9px 16px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font: inherit; cursor: pointer; }
+  #answer { white-space: pre-wrap; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; } th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; } .wrap { overflow-x: auto; }
+  .route-cache { color: var(--accent); font-weight: 600; } .route-large { color: var(--warn); }
+</style>
+</head>
+<body>
+<h1>Costwise RAG <span id="mock" class="badge" hidden>mock model: costs and latency are not real</span></h1>
+<div class="sub" id="models"></div>
+
+<form id="ask"><input id="q" placeholder="Ask about Brightline plans, backups, refunds…" autocomplete="off"><button>Ask</button></form>
+<div id="answer" class="card" hidden></div>
+
+<div class="grid" id="stats"></div>
+
+<div class="card wrap"><h2>Recent requests</h2>
+<table><thead><tr><th>Query</th><th>Route</th><th>Model</th><th>Cache</th><th>Score</th><th>Cost $</th><th>Baseline $</th><th>ms</th></tr></thead>
+<tbody id="recent"></tbody></table></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = (x, d = 5) => x == null ? '–' : Number(x).toFixed(d);
+function card(label, value) { return `<div class="card"><div class="num">${value}</div><div class="lbl">${label}</div></div>`; }
+async function refresh() {
+  const s = await (await fetch('/stats')).json();
+  $('mock').hidden = !s.mock;
+  $('models').textContent = `small: ${s.models.small} · large: ${s.models.large} · provider: ${s.llm_provider}`;
+  const r = s.by_route || {};
+  $('stats').innerHTML = [
+    card('requests', s.requests),
+    card('cache hits', `${s.cache_hits} (${s.requests ? Math.round(100 * s.cache_hits / s.requests) : 0}%)`),
+    card('small / large', `${r.small || 0} / ${r.large || 0}`),
+    card('escalations', s.escalations),
+    card('cost $', fmt(s.cost_usd)),
+    card('always-large cost $', fmt(s.baseline_cost_usd)),
+    card('saving', s.saving_share == null ? '–' : `${(100 * s.saving_share).toFixed(1)}%`),
+    card('latency p50 / p95 ms', `${fmt(s.latency_ms_p50, 0)} / ${fmt(s.latency_ms_p95, 0)}`),
+    s.cache ? card('cache entries', s.cache.entries) : '',
+    s.cache ? card('rejected by guard / evidence', `${s.cache.rejected_by_verifier} / ${s.cache.rejected_by_evidence}`) : '',
+  ].join('');
+  const rows = await (await fetch('/recent?n=25')).json();
+  $('recent').innerHTML = rows.map(x => `<tr><td>${x.query.replace(/</g, '&lt;')}</td>
+    <td class="route-${x.route}">${x.route}${x.escalated ? ' ↑' : ''}</td><td>${x.model}</td>
+    <td>${x.cache_tier ? `${x.cache_tier} ${fmt(x.cache_similarity, 2)}` : ''}</td><td>${fmt(x.route_score, 2)}</td>
+    <td>${fmt(x.cost_usd)}</td><td>${fmt(x.baseline_cost_usd)}</td><td>${fmt(x.latency_ms, 0)}</td></tr>`).join('');
+}
+$('ask').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const q = $('q').value.trim(); if (!q) return;
+  $('answer').hidden = false; $('answer').textContent = '…';
+  const res = await fetch('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q }) });
+  const a = await res.json();
+  $('answer').textContent = res.ok
+    ? `${a.text}\n\nroute: ${a.route}${a.cache_tier ? ` (${a.cache_tier}, sim ${fmt(a.cache_similarity, 2)})` : ''} · model: ${a.model} · cost $${fmt(a.cost_usd)} · ${Math.round(a.latency_ms)} ms · sources: ${a.sources.join(', ')}`
+    : `error: ${a.detail}`;
+  refresh();
+});
+refresh(); setInterval(refresh, 5000);
+</script>
+</body>
+</html>
