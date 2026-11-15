@@ -3,7 +3,8 @@
 Updated at every phase boundary. Plan: [docs/PLAN.md](docs/PLAN.md). Design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 **Working rule from Sahil (15 Nov 2026): commit each step as its own commit.** One commit per
-phase or sub-step, not one big commit. No remote exists yet, so nothing is pushed.
+phase or sub-step, not one big commit, and push each one: `git push origin main`.
+Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
 
 ## Done
 - **Phase 0:** design doc, plan, 12-document synthetic corpus (39 chunks), 60 questions
@@ -60,7 +61,6 @@ Diagnosis on the tune split (`scripts/diagnose_cache.py`) found the remaining wr
 - `CrossEncoderVerifier` is only tested with an injected scorer, never with the real model.
 - The repo lives in a folder the app made for this session; it is deleted if the session is
   deleted. Move it to a permanent folder before relying on it.
-- No git remote; commits are local only.
 
 ## How to run
 - Tests: `.venv/Scripts/python -m pytest -q`
