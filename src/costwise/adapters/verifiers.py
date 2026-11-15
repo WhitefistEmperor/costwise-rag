@@ -1,10 +1,13 @@
 """Cache verifiers: the second check that two similar-looking questions really are the same.
 
-KeyTermGuard is the default. Its rule, fixed before any test-split result was looked at:
+KeyTermGuard is the default. Its rule, written before any test-split result was looked at and
+revised once from a diagnosis of the TUNE split only:
 
-  Two questions conflict when EACH has a key term the other lacks (a substitution, such as
-  "Team" for "Business" or "800" for "500"). One side merely adding a term is not a conflict,
-  because paraphrases often add or drop words.
+  1. The numbers in the two questions must be the same set. A question that adds a number
+     ("Team with 12 seats and 1.3 TB") asks something different from the one without it.
+  2. For all other key terms, the questions conflict when EACH has a term the other lacks (a
+     substitution, such as "Team" for "Business"). One side merely adding a term is not a
+     conflict, because paraphrases often add or drop words.
 
 Key terms are:
   1. entity terms taken from the corpus alone: words written with a capital letter in the
@@ -19,6 +22,7 @@ import re
 from typing import Callable, Iterable, Sequence
 
 from ..domain.models import Chunk
+from ..domain.ports import LLMClient
 
 _TOKEN = re.compile(r"[A-Za-z0-9]+(?:\.[0-9]+)?")
 _NUMBER = re.compile(r"[0-9]+(?:\.[0-9]+)?")
@@ -69,8 +73,16 @@ class KeyTermGuard:
                 out.add(_CONTRAST[token])
         return out
 
+    @staticmethod
+    def _split(terms: set[str]) -> tuple[set[str], set[str]]:
+        nums = {t for t in terms if t.startswith("num:")}
+        return nums, terms - nums
+
     def same_question(self, query: str, cached_query: str) -> bool:
-        a, b = self.key_terms(query), self.key_terms(cached_query)
+        a_num, a = self._split(self.key_terms(query))
+        b_num, b = self._split(self.key_terms(cached_query))
+        if a_num != b_num:
+            return False
         return not (a - b and b - a)
 
 
@@ -93,3 +105,31 @@ class CrossEncoderVerifier:
 
             self._scorer = CrossEncoder(self.model_name).predict
         return float(self._scorer([(query, cached_query)])[0]) >= self.threshold
+
+
+class LLMVerifier:
+    """Strong verifier: asks a small LLM whether two questions ask for the same information.
+
+    Used only inside the cache's similarity band, at most once per lookup. One call is a few
+    dozen tokens on the small model, roughly 0.5% of a large-model answer. The cost of the last
+    call is kept in `last_cost_usd` so the cache can charge it to the request.
+    """
+
+    name = "llm_verifier"
+    SYSTEM = ("You judge whether two user questions ask for exactly the same information from the "
+              "same product documentation. Questions about different plans, periods, regions, "
+              "quantities or features are NOT the same. Answer with one word: YES or NO.")
+
+    def __init__(self, llm: LLMClient, model: str, max_tokens: int = 3):
+        self.llm, self.model, self.max_tokens = llm, model, max_tokens
+        self.calls = 0
+        self.cost_usd = 0.0
+        self.last_cost_usd = 0.0
+
+    def same_question(self, query: str, cached_query: str) -> bool:
+        user = f"Question A: {query}\nQuestion B: {cached_query}\nSame information? YES or NO."
+        result = self.llm.complete(self.model, self.SYSTEM, user, self.max_tokens)
+        self.calls += 1
+        self.last_cost_usd = result.cost_usd
+        self.cost_usd += result.cost_usd
+        return result.text.strip().upper().startswith("YES")

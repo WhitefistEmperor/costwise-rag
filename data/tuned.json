@@ -1,0 +1,6 @@
+{
+  "cache_threshold": 0.88,
+  "cache_candidate_threshold": 0.6,
+  "cache_verifier": "key_term_guard",
+  "cache_require_same_evidence": true
+}

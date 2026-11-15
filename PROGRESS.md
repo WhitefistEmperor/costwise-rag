@@ -11,49 +11,41 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
   (46 easy, 14 hard; 25 tune, 35 test; 2 paraphrases each) built by `scripts/make_questions.py`.
 - **Phase 1:** domain models and ports, chunking, embedders, dense + BM25 + hybrid retrieval,
   retrieval eval. Test split, 105 queries, recall@4: dense 102, BM25 98, hybrid 103.
-- **Phase 2 (code done, design not finished):** `SemanticCache` (exact tier, semantic tier,
-  verifier, TTL, source-hash invalidation, same-evidence check), `KeyTermGuard`,
-  `CrossEncoderVerifier` (optional, not downloaded), SQLite cache store, cache eval.
-  32 tests pass.
+- **Phase 2:** `SemanticCache` with two thresholds (exact tier, semantic tier above the accept
+  threshold with `KeyTermGuard`, a band down to the candidate threshold where a strong verifier
+  must also agree, at most one strong call per lookup, its cost charged to the request), TTL,
+  source-hash invalidation, same-evidence check. Verifiers: `KeyTermGuard` (numbers must match
+  as a set; substitution rule for entity terms), `LLMVerifier` (small model, YES/NO, built on
+  the `LLMClient` port), `CrossEncoderVerifier` (optional, not downloaded). SQLite store.
+  Offline cache eval with tune-only threshold rules. 38 tests pass.
 
-## In progress: Phase 2 finding and what to do about it
-The cache eval showed that embedding similarity (MiniLM) cannot separate paraphrases from
-near-miss questions on this data. Numbers, 5 stream seeds, 350 test queries, 175 repeats:
-- threshold only: no threshold below 0.99 is free of wrong pairs on tune, so 0 hits.
-- key-term guard, threshold 0.88 from tune: 22 hits, 5 wrong, repeat recall 9.7%.
-- adding the same-evidence check changed almost nothing.
-- Same-question pairs on tune sit mostly at similarity 0.6 to 0.9 (only 6 of 75 above 0.9).
-
-Diagnosis on the tune split (`scripts/diagnose_cache.py`) found the remaining wrong accepts:
-1. A question with extra numbers ("Team with 12 seats and 1.3 TB") matched the plain one
-   ("Team price"). Fix decided: numbers must match exactly as a set; keep the substitution rule
-   for entity terms only.
-2. True semantic near-misses ("how long can a deleted workspace be restored" vs "how long until
-   it is purged", similarity 0.86). No free rule separates these.
+  Offline cache numbers (test split, 5 stream seeds, 350 queries, 175 repeats; thresholds from
+  tune; synthetic corpus, so not production numbers):
+  - threshold only: tune needs 0.99, so 0 hits.
+  - guard (+ same evidence), accept 0.88: 22 hits, 17 correct, 5 wrong; repeat recall 17/175
+    (9.7%); wrong-hit rate 5/350 (1.4%). This is the free configuration.
+  - UPPER BOUND with a perfect strong verifier in the band [0.60, 0.88): 139 hits, 134 correct,
+    5 wrong, 145 verifier calls; repeat recall 134/175 (76.6%). The 5 wrong hits are above the
+    accept threshold, where the strong verifier is not asked.
+  - UPPER BOUND, strong verifier checks every candidate (accept 0.99, candidate 0.60): 138 hits,
+    0 wrong, 164 calls; repeat recall 138/175 (78.9%).
+  These bounds are what a real strong verifier could at best reach; real numbers need the paid
+  live run.
 
 ## Next steps (in order)
-1. In `adapters/verifiers.py` `KeyTermGuard.same_question`: require equal number sets; update
-   the docstring rule and `tests/test_cache.py`. Re-run `scripts/diagnose_cache.py` (tune only).
-2. Make the cache two-threshold: similarity >= `accept_threshold` plus guard accepts directly;
-   between `candidate_threshold` and `accept_threshold` a **strong verifier** must also agree.
-   Strong verifier is a `Verifier`: add `LLMVerifier` (asks the small model "same question?",
-   costs about 0.5% of a large call) next to the existing `CrossEncoderVerifier`.
-3. In the offline eval, report the free configuration (guard only) and the upper bound with a
-   perfect strong verifier (share of repeats that have a correct candidate above the low
-   threshold). The real strong-verifier numbers come from the paid live run.
-4. Update `docs/ARCHITECTURE.md` section 3.1 with this finding and the two-threshold design.
-   Run `python -m costwise.eval.offline` to write `results/offline.json` and `data/tuned.json`.
-   Commit: "Phase 2: two-threshold cache with strong verifier".
-5. Phase 3: router (`domain/routing.py`: features, HeuristicRouter, LearnedRouter), router eval
-   on the test split, tests. Commit.
-6. Phase 4: `domain/pricing.py`, `domain/pipeline.py`, `adapters/llm.py` (OpenRouterLLM,
+1. Phase 3: router (`domain/routing.py`: features, HeuristicRouter, LearnedRouter), router eval
+   on the test split (fit on tune), tests. Commit "Phase 3: cost-aware router".
+2. Phase 4: `domain/pricing.py`, `domain/pipeline.py`, `adapters/llm.py` (OpenRouterLLM,
    MockLLM), request log in `adapters/storage.py`, `app/container.py`, `app/api.py`,
-   `app/dashboard.html`, tests. Pipeline order: embed, retrieve, cache lookup (needs the top
-   chunk id as evidence key), route, generate, store, log. Commit.
-7. Phase 5: `eval/live.py` with five configs (always-large baseline, always-small, router only,
-   cache only, full), a hard `--max-cost` cap, a `--mock` dry run. Lengthen the stream and
-   report counts with every percentage. Commit.
-8. Phase 6 needs Sahil's go-ahead (spends OpenRouter credit, estimated under $0.50).
+   `app/dashboard.html`, tests. Pipeline order: embed, retrieve, cache lookup (top chunk id as
+   evidence key; add `cache.last_lookup_cost_usd` to the request cost), route, generate, store,
+   log. Mock model is the default; the paid client needs an explicit setting and the key from
+   the environment only. Commit "Phase 4: pipeline, API and dashboard".
+3. Phase 5: `eval/live.py` with five configs (always-large baseline, always-small, router only,
+   cache only, full), a hard `--max-cost` cap checked before every call, a `--mock` dry run
+   whose output file is marked as mock. Longer stream; counts next to every percentage.
+   Commit "Phase 5: live eval harness".
+4. Phase 6 needs Sahil's go-ahead (spends OpenRouter credit, estimated under $0.50).
 
 ## Open issues
 - Paid live eval not run; no cost, latency or answer-quality numbers exist yet.
@@ -66,4 +58,5 @@ Diagnosis on the tune split (`scripts/diagnose_cache.py`) found the remaining wr
 - Tests: `.venv/Scripts/python -m pytest -q`
 - Offline eval: `PYTHONPATH=src .venv/Scripts/python -m costwise.eval.offline`
 - Cache view: `PYTHONPATH=src .venv/Scripts/python scripts/show_cache_eval.py`
+- Tune-split cache diagnosis: `PYTHONPATH=src .venv/Scripts/python scripts/diagnose_cache.py 0.70`
 - Never paste Python with quotes into a bash heredoc here; write a script file and run it.

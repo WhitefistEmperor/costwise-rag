@@ -10,11 +10,11 @@ with every number produced by a reproducible eval.
 query
   │
   ▼
-[1 embed query] ──► [2 cache: exact → semantic → verify] ──hit──► answer (no LLM call)
-                              │ miss
-                              ▼
-                    [3 retrieve: BM25 + dense, fused]
+[1 embed query] ──► [2 retrieve: BM25 + dense, fused]
                               │
+                              ▼
+                    [3 cache: exact → semantic → guard → (band) strong verifier] ──hit──► answer
+                              │ miss                                                    (no LLM call)
                               ▼
                     [4 route: small or large model]
                               │
@@ -24,6 +24,10 @@ query
                               ▼
                     [6 store in cache] ─► [7 log cost, tokens, latency] ─► answer
 ```
+
+Retrieval runs before the cache lookup because the cache uses the top retrieved chunk as an
+evidence key: a candidate answered from a different chunk is never served. Retrieval is local
+and costs about a millisecond, so this ordering gives up nothing.
 
 ## 2. Code structure: ports and adapters
 
@@ -75,19 +79,38 @@ returns a confident wrong answer, which is worse than a miss.
 | C. B, then a second check on the candidate (verifier) | Keeps paraphrase hits, rejects near-misses | More moving parts; verifier adds a few ms |
 | D. B, then ask an LLM "same question?" | Most accurate | Costs money and latency on every candidate, which defeats the cache |
 
-**Chosen: C, in three tiers.** (1) Exact match on the normalised query, free and always right.
-(2) Embedding similarity picks the best candidate above a threshold. (3) A verifier must accept
-the pair before it counts as a hit.
+**Chosen: C, in three tiers, with D confined to a narrow band.** (1) Exact match on the
+normalised query, free and always right. (2) Embedding similarity picks the best candidates above
+a *candidate* threshold. (3) The cheap verifier (KeyTermGuard) must accept the pair. Above the
+*accept* threshold that is enough; in the band between the two thresholds a strong verifier
+must also agree, and it is called at most once per lookup.
 
-Verifier options, both built behind one interface and compared in the eval:
+Verifier options, all behind one `Verifier` interface:
 
-- **KeyTermGuard (default):** rejects the hit if the two questions differ in numbers or in domain
-  entity terms (plan names, regions, "monthly" vs "annual"). Entity terms are extracted from the
-  corpus. Deterministic, free, no model download, easy to explain.
-- **CrossEncoderVerifier (optional):** a small duplicate-question cross-encoder scores the pair.
-  More general, but needs a model download (about 300 MB) and adds about 10–30 ms on CPU.
+- **KeyTermGuard (default, free):** rejects the pair if the numbers differ as a set, or if each
+  question has an entity term the other lacks (plan names, regions, "monthly" vs "annual").
+  Entity terms are extracted from the corpus. Deterministic, no model download, easy to explain.
+- **LLMVerifier (strong, paid):** asks the small model "same information? YES or NO" with a
+  three-token answer. About 0.5% of the cost of a large-model answer, so a cache that only
+  pays it on real candidates still saves money. Its cost is charged to the request, hit or miss.
+- **CrossEncoderVerifier (strong, optional):** a duplicate-question cross-encoder. Free per
+  call but needs a model download (about 300 MB) and 10–30 ms on CPU. Not downloaded yet.
 
-The threshold is tuned on one split of the questions and reported on a different split.
+**Why two thresholds (finding from the Phase 2 offline eval, tune split):** with MiniLM
+embeddings, same-question paraphrases sit mostly at similarity 0.6–0.9 (only 6 of 75 tune
+pairs above 0.9), while deliberate near-misses ("refund window for monthly" vs "annual") sit
+in the same range. No single threshold separates them: the lowest tune threshold with zero
+false accepts under the guard is 0.86 (0.88 with margin), which recovers only 11 of 75 tune
+pairs. The guard removes substitutions and added numbers, but true semantic near-misses
+remain ("how long can a deleted workspace be restored" vs "how long until it is purged",
+similarity 0.86). So the free path keeps the strict accept threshold, and the band below it
+is opened only when a strong verifier is configured. The offline eval reports the free
+configuration and the *upper bound* of the band with a perfect verifier; the real
+strong-verifier numbers can only come from the paid live run.
+
+Both thresholds are fitted on the tune split (accept: lowest grid value with zero false accepts
+plus a 0.02 margin; candidate: lowest grid value whose band is at least half true repeats, so
+the verifier is called about once per correct hit it adds) and reported on the test split.
 
 ### 3.2 Cache freshness
 
@@ -148,17 +171,19 @@ Two layers, so most numbers cost nothing to produce.
 **Offline (free, no LLM):**
 - Retrieval recall@k for dense, BM25 and hybrid.
 - Cache: hit rate, wrong-hit rate and paraphrase recall across thresholds, for threshold-only
-  versus each verifier. Reported with the repeat rate of the query stream, because hit rate
-  depends on it.
+  versus each free verifier, plus the upper bound of the two-threshold band with a perfect
+  strong verifier (labelled as such). Reported with the repeat rate of the query stream,
+  because hit rate depends on it.
 - Router: accuracy, share of hard questions sent to the large model, share of easy ones kept
   on the small model, heuristic versus learned.
 
-**Live (uses OpenRouter credit, hard budget cap):** the same query stream through four
+**Live (uses OpenRouter credit, hard budget cap):** the same query stream through five
 configurations with identical retrieval and prompt:
 
 | Config | Cache | Router |
 |---|---|---|
 | baseline | off | always large |
+| always-small | off | always small |
 | + router | off | on |
 | + cache | on | always large |
 | full | on | on |
@@ -167,8 +192,9 @@ Reported per config: answer accuracy, total cost, cost per query, p50 and p95 la
 hits and wrong hits, route split, escalations.
 
 **Honesty rules:** thresholds and router weights are fitted on the tune split and reported on the
-test split. The corpus is a 12-document synthetic knowledge base with 40 questions (26 easy,
-14 multi-step), 2 paraphrases each, and deliberate near-miss pairs; results say so. No number
+test split. The corpus is a 12-document synthetic knowledge base with 60 questions (46 easy,
+14 multi-step; 25 tune, 35 test), 2 paraphrases each, and deliberate near-miss pairs; results
+say so, and every percentage is reported with its counts. No number
 goes on a resume unless a run produced it.
 
 ## 5. Known limits
@@ -176,6 +202,7 @@ goes on a resume unless a run produced it.
 - A small synthetic corpus shows the method works; it does not prove production numbers. The
   stronger follow-up is a public paraphrase set (Quora Question Pairs) for the cache.
 - KeyTermGuard depends on entity terms found in the corpus; it will miss near-misses that differ
-  only in ordinary words. The cross-encoder covers that case.
+  only in ordinary words. The strong verifier (LLM or cross-encoder) covers that case, but only
+  inside the band; a near-miss above the accept threshold still gets through.
 - Single process: the SQLite cache is not shared across instances.
 - Answers are graded by required key facts, not by a human or an LLM judge.
