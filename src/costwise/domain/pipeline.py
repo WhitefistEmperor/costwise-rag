@@ -58,7 +58,7 @@ class Pipeline:
         qvec = self.embedder.encode([query])[0]
         hits = self.retriever.search(query, qvec, self.top_k)
         evidence_key = hits[0].chunk.id if hits else None
-        sources = [h.chunk.doc for h in hits]
+        sources = list(dict.fromkeys(h.chunk.doc for h in hits))     # one per doc, as on a cache hit
         verify_cost = 0.0
 
         if self.cache is not None:

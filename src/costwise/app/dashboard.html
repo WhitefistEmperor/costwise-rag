@@ -8,6 +8,7 @@
   :root { --bg: #f7f7f5; --fg: #1d1d1b; --muted: #6b6b66; --card: #ffffff; --line: #e3e3de; --accent: #1f6f5f; --warn: #b4530a; }
   @media (prefers-color-scheme: dark) { :root { --bg: #15161a; --fg: #ecece8; --muted: #9a9a94; --card: #1e2027; --line: #2d2f38; --accent: #5fc7ad; --warn: #f0a35a; } }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }   /* .badge sets display, which would otherwise override [hidden] */
   body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, sans-serif; }
   h1 { font-size: 20px; margin: 0 0 4px; } h2 { font-size: 15px; margin: 0 0 8px; color: var(--muted); font-weight: 600; }
   .sub { color: var(--muted); margin-bottom: 16px; }
@@ -40,7 +41,12 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const fmt = (x, d = 5) => x == null ? '–' : Number(x).toFixed(d);
-function card(label, value) { return `<div class="card"><div class="num">${value}</div><div class="lbl">${label}</div></div>`; }
+// Every value put into innerHTML goes through esc(): & first, then < > " '.
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function card(label, value) { return `<div class="card"><div class="num">${esc(value)}</div><div class="lbl">${esc(label)}</div></div>`; }
 async function refresh() {
   const s = await (await fetch('/stats')).json();
   $('mock').hidden = !s.mock;
@@ -59,10 +65,10 @@ async function refresh() {
     s.cache ? card('rejected by guard / evidence', `${s.cache.rejected_by_verifier} / ${s.cache.rejected_by_evidence}`) : '',
   ].join('');
   const rows = await (await fetch('/recent?n=25')).json();
-  $('recent').innerHTML = rows.map(x => `<tr><td>${x.query.replace(/</g, '&lt;')}</td>
-    <td class="route-${x.route}">${x.route}${x.escalated ? ' ↑' : ''}</td><td>${x.model}</td>
-    <td>${x.cache_tier ? `${x.cache_tier} ${fmt(x.cache_similarity, 2)}` : ''}</td><td>${fmt(x.route_score, 2)}</td>
-    <td>${fmt(x.cost_usd)}</td><td>${fmt(x.baseline_cost_usd)}</td><td>${fmt(x.latency_ms, 0)}</td></tr>`).join('');
+  $('recent').innerHTML = rows.map(x => `<tr><td>${esc(x.query)}</td>
+    <td class="route-${esc(x.route)}">${esc(x.route)}${x.escalated ? ' ↑' : ''}</td><td>${esc(x.model)}</td>
+    <td>${x.cache_tier ? `${esc(x.cache_tier)} ${esc(fmt(x.cache_similarity, 2))}` : ''}</td><td>${esc(fmt(x.route_score, 2))}</td>
+    <td>${esc(fmt(x.cost_usd))}</td><td>${esc(fmt(x.baseline_cost_usd))}</td><td>${esc(fmt(x.latency_ms, 0))}</td></tr>`).join('');
 }
 $('ask').addEventListener('submit', async (e) => {
   e.preventDefault();

@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 
 from ..domain.models import Answer, CacheEntry
+from ..domain.stats import percentile
 
 
 def _connect(path: Path | str | None) -> sqlite3.Connection:
@@ -84,8 +85,8 @@ class SQLiteRequestLog:
             rows = self.db.execute("SELECT route, cost_usd, baseline_cost_usd, latency_ms, escalated, cache_tier "
                                    "FROM requests").fetchall()
         n = len(rows)
-        lat = sorted(r[3] for r in rows)
-        pct = lambda p: round(lat[min(len(lat) - 1, int(p * len(lat)))], 1) if lat else None
+        lat = [r[3] for r in rows]
+        pct = lambda p: None if not lat else round(percentile(lat, p), 1)
         cost = sum(r[1] for r in rows)
         baseline = sum(r[2] for r in rows)
         by_route = {}

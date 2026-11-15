@@ -33,6 +33,7 @@ from ..domain.models import LLMResult
 from ..domain.pipeline import Pipeline
 from ..domain.ports import LLMClient
 from ..domain.pricing import PRICES_PER_M, cost_usd, estimate_tokens, has_price
+from ..domain.stats import percentile
 from ..settings import ROOT, Settings
 from .dataset import Query, all_texts, build_stream, is_correct, load_questions
 
@@ -120,8 +121,8 @@ class ConfigResult:
     error: str | None = None
 
     def summary(self) -> dict:
-        lat = sorted(self.latencies_ms)
-        pct = lambda p: round(lat[min(len(lat) - 1, int(p * len(lat)))], 1) if lat else None
+        lat = self.latencies_ms
+        pct = lambda p: None if not lat else round(percentile(lat, p), 1)
         n = self.queries
         share = lambda x, d: round(x / d, 4) if d else None
         return {
