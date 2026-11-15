@@ -125,6 +125,16 @@ about $0.25 to $0.35; two seeds may touch the $0.50 cap, in which case the run s
 1. Phase 6 (needs go-ahead): paid live run, then README with the real numbers and resume bullets.
 2. Later (optional): Quora Question Pairs cache benchmark, Prometheus endpoint, Dockerfile.
 
+## Independent check of the fixes (15 Nov, at 1538b07)
+All 12 reviewed defects are fixed; 153 tests pass with no network access; every number above
+reproduces from a fresh run. Still open from that check, to fix next (each with a test):
+- `--max-cost inf` (or `nan`) runs the whole config and then crashes when writing JSON, so the
+  results are lost; with `nan` the cap is also blind. Reject non-finite values when parsing.
+- Ctrl+C (`KeyboardInterrupt`) during the live run writes nothing; save partial results first.
+- If the strong verifier raises (for example the budget cap), `SemanticCache.lookup` skips its
+  stats and stale-entry cleanup for that lookup.
+- `KeyTermGuard` treats a unit-only change as the same question ("800GB" vs "800MB").
+
 ## Open issues
 - Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock
   numbers in results/live_mock.json are not real.
