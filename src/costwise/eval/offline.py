@@ -254,6 +254,7 @@ def eval_router(retriever, embedder: Embedder, tune: Sequence[dict], test: Seque
             "test_by_threshold": [router_counts(router, test_rows, t) for t in ROUTE_GRID],
         }
     return out, {"route_threshold": out["routers"]["learned"]["threshold_from_tune"],
+                 "heuristic_route_threshold": out["routers"]["heuristic"]["threshold_from_tune"],
                  "router_weights": learned.to_weights()}
 
 

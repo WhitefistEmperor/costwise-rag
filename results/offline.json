@@ -718,11 +718,11 @@
           "hard": 21,
           "easy": 54,
           "hard_to_large": 18,
-          "easy_to_small": 50,
-          "sent_to_large": 22,
-          "accuracy": 0.9067,
+          "easy_to_small": 52,
+          "sent_to_large": 20,
+          "accuracy": 0.9333,
           "hard_recall": 0.8571,
-          "easy_kept_small": 0.9259
+          "easy_kept_small": 0.963
         },
         "test": {
           "threshold": 0.4,
@@ -880,11 +880,11 @@
             "hard": 21,
             "easy": 84,
             "hard_to_large": 19,
-            "easy_to_small": 55,
-            "sent_to_large": 48,
-            "accuracy": 0.7048,
+            "easy_to_small": 52,
+            "sent_to_large": 51,
+            "accuracy": 0.6762,
             "hard_recall": 0.9048,
-            "easy_kept_small": 0.6548
+            "easy_kept_small": 0.619
           },
           {
             "threshold": 0.2,
@@ -892,11 +892,11 @@
             "hard": 21,
             "easy": 84,
             "hard_to_large": 18,
-            "easy_to_small": 69,
-            "sent_to_large": 33,
-            "accuracy": 0.8286,
+            "easy_to_small": 67,
+            "sent_to_large": 35,
+            "accuracy": 0.8095,
             "hard_recall": 0.8571,
-            "easy_kept_small": 0.8214
+            "easy_kept_small": 0.7976
           },
           {
             "threshold": 0.3,
@@ -904,11 +904,11 @@
             "hard": 21,
             "easy": 84,
             "hard_to_large": 18,
-            "easy_to_small": 76,
-            "sent_to_large": 26,
-            "accuracy": 0.8952,
+            "easy_to_small": 75,
+            "sent_to_large": 27,
+            "accuracy": 0.8857,
             "hard_recall": 0.8571,
-            "easy_kept_small": 0.9048
+            "easy_kept_small": 0.8929
           },
           {
             "threshold": 0.4,
@@ -916,11 +916,11 @@
             "hard": 21,
             "easy": 84,
             "hard_to_large": 18,
-            "easy_to_small": 78,
-            "sent_to_large": 24,
-            "accuracy": 0.9143,
+            "easy_to_small": 77,
+            "sent_to_large": 25,
+            "accuracy": 0.9048,
             "hard_recall": 0.8571,
-            "easy_kept_small": 0.9286
+            "easy_kept_small": 0.9167
           },
           {
             "threshold": 0.5,
@@ -952,11 +952,11 @@
             "hard": 21,
             "easy": 84,
             "hard_to_large": 16,
-            "easy_to_small": 81,
-            "sent_to_large": 19,
-            "accuracy": 0.9238,
+            "easy_to_small": 84,
+            "sent_to_large": 16,
+            "accuracy": 0.9524,
             "hard_recall": 0.7619,
-            "easy_kept_small": 0.9643
+            "easy_kept_small": 1.0
           },
           {
             "threshold": 0.8,

@@ -25,12 +25,26 @@ _NUMBER = re.compile(r"\b\d+(?:\.\d+)?\b")
 
 # Cues that a question combines facts, compares, or computes something. The list was filtered
 # to cues that occur in at least one TUNE-split text (scripts/filter_router_cues.py), because the
-# first draft was written after the hard questions of both splits had been looked at.
+# first draft was written after the hard questions of both splits had been looked at. Cues match
+# whole words only; under that rule "which plan" occurs in no tune text and was dropped.
 MULTI_PART_CUES = (
-    "between", "both", "and what", "and how", "total", "cheapest", "lowest", "which plan", "if i",
+    "between", "both", "and what", "and how", "total", "cheapest", "lowest", "if i",
     "if a", "after upgrading", "per hour", "in one hour", "maximum number", "at most", "longest",
     "and its", "and how long", "what does it cost and",
 )
+
+_CUE_PATTERNS = {cue: re.compile(rf"\b{re.escape(cue)}\b") for cue in MULTI_PART_CUES}
+
+
+def matched_cues(text: str) -> list[str]:
+    """Cues found as whole words ("if a" does not match "if any", "and its" not "and itself")."""
+    q = text.lower()
+    return [cue for cue, pattern in _CUE_PATTERNS.items() if pattern.search(q)]
+
+
+def cue_count(text: str) -> int:
+    return len(matched_cues(text))
+
 
 FEATURE_NAMES = (
     "words",            # question length in words / 10
@@ -46,7 +60,7 @@ FEATURE_NAMES = (
 def features(query: str, hits: Sequence[Hit]) -> list[float]:
     q = query.lower()
     words = _WORD.findall(q)
-    cues = sum(cue in q for cue in MULTI_PART_CUES)
+    cues = cue_count(q)
     clauses = q.count(",") + q.count(";") + sum(w in ("and", "or") for w in words)
     docs = len({h.chunk.doc for h in hits})
     scores = sorted((h.dense_score for h in hits), reverse=True)

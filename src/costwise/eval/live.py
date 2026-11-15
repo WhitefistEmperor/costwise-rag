@@ -23,11 +23,11 @@ import time
 from dataclasses import dataclass, field
 from typing import Sequence
 
+from ..adapters.corpus import load_corpus
 from ..adapters.llm import MockLLM, ProviderError
 from ..adapters.retrieval import build_retrievers
 from ..adapters.storage import SQLiteRequestLog
-from ..app.container import build_cache, build_embedder, build_llm, build_router
-from ..adapters.corpus import load_corpus
+from ..app.container import build_cache, build_embedder, build_llm, build_router, route_threshold_for
 from ..domain.chunking import doc_hashes
 from ..domain.models import LLMResult
 from ..domain.pipeline import Pipeline
@@ -143,7 +143,7 @@ def make_pipeline(settings: Settings, tuned: dict, chunks, retriever, embedder, 
     router = build_router(settings, tuned) if router_on else None
     return Pipeline(embedder, retriever, llm, settings.small_model, settings.large_model, cache=cache,
                     router=router, default_route=default_route,
-                    route_threshold=tuned.get("route_threshold", settings.route_threshold),
+                    route_threshold=route_threshold_for(settings, tuned),
                     top_k=settings.top_k, max_answer_tokens=settings.max_answer_tokens,
                     escalate_on_abstain=escalate, doc_hashes=doc_hashes(chunks), request_log=SQLiteRequestLog(None))
 

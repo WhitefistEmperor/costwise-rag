@@ -57,6 +57,16 @@ def build_router(settings: Settings, tuned: dict) -> Router | None:
     raise ValueError(f"unknown router {settings.router!r} (learned | heuristic | none)")
 
 
+def route_threshold_for(settings: Settings, tuned: dict) -> float:
+    """The tune-chosen threshold of the selected router. data/tuned.json keeps the learned
+    router's under `route_threshold` and the heuristic's under `heuristic_route_threshold`;
+    an older file with only `route_threshold` is used for both."""
+    learned = tuned.get("route_threshold", settings.route_threshold)
+    if settings.router == "heuristic":
+        return tuned.get("heuristic_route_threshold", learned)
+    return learned
+
+
 def build_cache(settings: Settings, tuned: dict, chunks: list[Chunk], llm: LLMClient,
                 persistent: bool = True) -> SemanticCache | None:
     if not settings.cache_enabled:
@@ -82,7 +92,7 @@ def build(settings: Settings | None = None, embedder: Embedder | None = None, ll
     log = SQLiteRequestLog(settings.request_log_db if persistent else None)
     pipeline = Pipeline(embedder, retriever, llm, settings.small_model, settings.large_model, cache=cache,
                         router=build_router(settings, tuned), default_route=settings.default_route,
-                        route_threshold=tuned.get("route_threshold", settings.route_threshold),
+                        route_threshold=route_threshold_for(settings, tuned),
                         top_k=settings.top_k, max_answer_tokens=settings.max_answer_tokens,
                         doc_hashes=doc_hashes(chunks), request_log=log)
     return Container(settings, pipeline, cache, log, llm, chunks)

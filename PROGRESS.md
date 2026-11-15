@@ -50,6 +50,10 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
     both splits had been printed. The list was then filtered mechanically to cues that occur in
     at least one tune text (`scripts/filter_router_cues.py`; 14 cues dropped) and the eval was
     rerun; the numbers above are from that rerun. The learned router's numbers did not change.
+    Later, cue matching was switched to whole words ("if a" no longer matches "if any"); under
+    that rule "which plan" occurs in no tune text and was dropped. Rerun: the test numbers above
+    did not change (heuristic tune accuracy 68/75 -> 70/75). Each router now uses its own
+    tune-chosen threshold (`heuristic_route_threshold` in data/tuned.json).
 
 - **Phase 4:** `domain/pricing.py` (price table, cost maths), `domain/pipeline.py` (embed,
   retrieve, cache lookup with the top chunk as evidence key, route, generate, escalate on
