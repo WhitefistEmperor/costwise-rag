@@ -21,6 +21,13 @@ def cost_usd(model: str, prompt_tokens: int, completion_tokens: int,
     return (prompt_tokens * inp + completion_tokens * out) / 1_000_000
 
 
+def has_price(model: str, prices: dict[str, tuple[float, float]] | None = None) -> bool:
+    """True if the table (or `prices`) has a nonzero price for `model`. A paid run must refuse
+    unpriced models, because their cost estimate is 0 and the budget cap would be blind."""
+    inp, out = (prices or PRICES_PER_M).get(model, (0.0, 0.0))
+    return inp > 0 or out > 0
+
+
 def estimate_tokens(text: str) -> int:
     """Rough token count for the mock model and for pre-call budget checks: ~4 characters per token."""
     return max(1, len(text) // 4)

@@ -19,28 +19,6 @@ def test_budget_is_checked_before_each_call():
     assert b.calls == 1 and 0 < b.spent_usd <= 0.00005
 
 
-@pytest.fixture
-def live_settings(corpus_dir, tmp_path):
-    questions = [
-        {"id": "price:starter", "q": "How much does Starter cost per month?",
-         "paraphrases": ["What is the monthly price of Starter?", "Starter monthly cost?"],
-         "keywords": ["9"], "docs": ["pricing.md"], "difficulty": "easy", "split": "test"},
-        {"id": "refund:monthly", "q": "What is the refund window for monthly plans?",
-         "paraphrases": ["Within how many days can monthly plans be refunded?"],
-         "keywords": ["7"], "docs": ["refunds.md"], "difficulty": "easy", "split": "test"},
-        {"id": "hard:0", "q": "Compare the total of Team with 2 extra seats and the backup frequency, 6 hours?",
-         "paraphrases": ["Total for Team plus 2 seats, and how often is it backed up?"],
-         "keywords": ["49"], "docs": ["pricing.md", "backups.md"], "difficulty": "hard", "split": "test"},
-    ]
-    qpath = tmp_path / "questions.json"
-    qpath.write_text(json.dumps(questions), encoding="utf-8")
-    tuned = tmp_path / "tuned.json"
-    tuned.write_text(json.dumps({"cache_threshold": 0.95, "cache_candidate_threshold": 0.95,
-                                 "cache_require_same_evidence": True, "route_threshold": 0.4}), encoding="utf-8")
-    return Settings(corpus_dir=corpus_dir, questions_path=qpath, tuned_path=tuned, state_dir=tmp_path / "state",
-                    embed_model="hash", router="heuristic", small_model="mock/small", large_model="mock/large")
-
-
 def test_mock_dry_run_covers_all_configs_and_is_marked_mock(live_settings):
     out = run(live_settings, MockLLM(), mock=True, max_cost_usd=1.0, seeds=(0, 1), embedder=HashEmbedder())
     assert out["mock"] is True and "NOT real" in out["note"] and set(out["configs"]) == set(CONFIGS)
