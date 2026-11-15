@@ -1,0 +1,1088 @@
+[
+ {
+  "id": "price:starter",
+  "family": "price",
+  "q": "How much does the Starter plan cost per month?",
+  "paraphrases": [
+   "What is the monthly price of the Starter plan?",
+   "What do I pay each month for Starter?"
+  ],
+  "keywords": [
+   "9"
+  ],
+  "docs": [
+   "pricing.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "price:team",
+  "family": "price",
+  "q": "How much does the Team plan cost per month?",
+  "paraphrases": [
+   "What is the monthly price of the Team plan?",
+   "What do I pay each month for Team?"
+  ],
+  "keywords": [
+   "49"
+  ],
+  "docs": [
+   "pricing.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "price:business",
+  "family": "price",
+  "q": "How much does the Business plan cost per month?",
+  "paraphrases": [
+   "What is the monthly price of the Business plan?",
+   "What do I pay each month for Business?"
+  ],
+  "keywords": [
+   "199"
+  ],
+  "docs": [
+   "pricing.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "storage:starter",
+  "family": "storage",
+  "q": "How much storage is included in the Starter plan?",
+  "paraphrases": [
+   "What storage allowance comes with Starter?",
+   "How many GB or TB do I get on the Starter plan?"
+  ],
+  "keywords": [
+   "100"
+  ],
+  "docs": [
+   "pricing.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "storage:team",
+  "family": "storage",
+  "q": "How much storage is included in the Team plan?",
+  "paraphrases": [
+   "What storage allowance comes with Team?",
+   "How many GB or TB do I get on the Team plan?"
+  ],
+  "keywords": [
+   [
+    "1 tb",
+    "1tb",
+    "1 terabyte"
+   ]
+  ],
+  "docs": [
+   "pricing.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "storage:business",
+  "family": "storage",
+  "q": "How much storage is included in the Business plan?",
+  "paraphrases": [
+   "What storage allowance comes with Business?",
+   "How many GB or TB do I get on the Business plan?"
+  ],
+  "keywords": [
+   [
+    "5 tb",
+    "5tb",
+    "5 terabyte"
+   ]
+  ],
+  "docs": [
+   "pricing.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "backup_freq:starter",
+  "family": "backup_freq",
+  "q": "How often are backups taken on the Starter plan?",
+  "paraphrases": [
+   "What is the backup frequency for Starter workspaces?",
+   "On Starter, how frequently does Brightline back up my data?"
+  ],
+  "keywords": [
+   [
+    "daily",
+    "every day",
+    "once a day"
+   ]
+  ],
+  "docs": [
+   "backups.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "backup_freq:team",
+  "family": "backup_freq",
+  "q": "How often are backups taken on the Team plan?",
+  "paraphrases": [
+   "What is the backup frequency for Team workspaces?",
+   "On Team, how frequently does Brightline back up my data?"
+  ],
+  "keywords": [
+   [
+    "6 hours",
+    "six hours"
+   ]
+  ],
+  "docs": [
+   "backups.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "backup_freq:business",
+  "family": "backup_freq",
+  "q": "How often are backups taken on the Business plan?",
+  "paraphrases": [
+   "What is the backup frequency for Business workspaces?",
+   "On Business, how frequently does Brightline back up my data?"
+  ],
+  "keywords": [
+   [
+    "hourly",
+    "every hour"
+   ]
+  ],
+  "docs": [
+   "backups.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "retention:starter",
+  "family": "retention",
+  "q": "How long are backups retained on the Starter plan?",
+  "paraphrases": [
+   "What is the backup retention period for Starter?",
+   "For how many days does Starter keep backups?"
+  ],
+  "keywords": [
+   "30"
+  ],
+  "docs": [
+   "backups.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "retention:team",
+  "family": "retention",
+  "q": "How long are backups retained on the Team plan?",
+  "paraphrases": [
+   "What is the backup retention period for Team?",
+   "For how many days does Team keep backups?"
+  ],
+  "keywords": [
+   "90"
+  ],
+  "docs": [
+   "backups.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "retention:business",
+  "family": "retention",
+  "q": "How long are backups retained on the Business plan?",
+  "paraphrases": [
+   "What is the backup retention period for Business?",
+   "For how many days does Business keep backups?"
+  ],
+  "keywords": [
+   "365"
+  ],
+  "docs": [
+   "backups.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "rate_limit:starter",
+  "family": "rate_limit",
+  "q": "What is the API rate limit on the Starter plan?",
+  "paraphrases": [
+   "How many API requests per minute does Starter allow?",
+   "What request-per-minute cap applies to Starter API usage?"
+  ],
+  "keywords": [
+   "60"
+  ],
+  "docs": [
+   "api.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "rate_limit:team",
+  "family": "rate_limit",
+  "q": "What is the API rate limit on the Team plan?",
+  "paraphrases": [
+   "How many API requests per minute does Team allow?",
+   "What request-per-minute cap applies to Team API usage?"
+  ],
+  "keywords": [
+   "600"
+  ],
+  "docs": [
+   "api.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "rate_limit:business",
+  "family": "rate_limit",
+  "q": "What is the API rate limit on the Business plan?",
+  "paraphrases": [
+   "How many API requests per minute does Business allow?",
+   "What request-per-minute cap applies to Business API usage?"
+  ],
+  "keywords": [
+   "3000"
+  ],
+  "docs": [
+   "api.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "support_time:starter",
+  "family": "support_time",
+  "q": "What is the support response time on the Starter plan?",
+  "paraphrases": [
+   "How quickly does support reply to Starter customers?",
+   "How long until I hear back from support on Starter?"
+  ],
+  "keywords": [
+   "48"
+  ],
+  "docs": [
+   "support.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "support_time:team",
+  "family": "support_time",
+  "q": "What is the support response time on the Team plan?",
+  "paraphrases": [
+   "How quickly does support reply to Team customers?",
+   "How long until I hear back from support on Team?"
+  ],
+  "keywords": [
+   "8"
+  ],
+  "docs": [
+   "support.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "support_time:business",
+  "family": "support_time",
+  "q": "What is the support response time on the Business plan?",
+  "paraphrases": [
+   "How quickly does support reply to Business customers?",
+   "How long until I hear back from support on Business?"
+  ],
+  "keywords": [
+   [
+    "1 hour",
+    "one hour",
+    "1-hour"
+   ]
+  ],
+  "docs": [
+   "support.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "versions:starter",
+  "family": "versions",
+  "q": "How many file versions does the Starter plan keep?",
+  "paraphrases": [
+   "What is the version history limit on Starter?",
+   "How many previous versions of a file are stored on Starter?"
+  ],
+  "keywords": [
+   "10"
+  ],
+  "docs": [
+   "backups.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "versions:team",
+  "family": "versions",
+  "q": "How many file versions does the Team plan keep?",
+  "paraphrases": [
+   "What is the version history limit on Team?",
+   "How many previous versions of a file are stored on Team?"
+  ],
+  "keywords": [
+   "50"
+  ],
+  "docs": [
+   "backups.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "versions:business",
+  "family": "versions",
+  "q": "How many file versions does the Business plan keep?",
+  "paraphrases": [
+   "What is the version history limit on Business?",
+   "How many previous versions of a file are stored on Business?"
+  ],
+  "keywords": [
+   "unlimited"
+  ],
+  "docs": [
+   "backups.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "guests:team",
+  "family": "guests",
+  "q": "How many guest collaborators can a Team workspace invite?",
+  "paraphrases": [
+   "What is the guest limit on the Team plan?",
+   "How many outside guests are allowed on Team?"
+  ],
+  "keywords": [
+   "25"
+  ],
+  "docs": [
+   "sharing.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "guests:business",
+  "family": "guests",
+  "q": "How many guest collaborators can a Business workspace invite?",
+  "paraphrases": [
+   "What is the guest limit on the Business plan?",
+   "How many outside guests are allowed on Business?"
+  ],
+  "keywords": [
+   "unlimited"
+  ],
+  "docs": [
+   "sharing.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "extra_seat:team",
+  "family": "extra_seat",
+  "q": "How much does an extra seat cost on the Team plan?",
+  "paraphrases": [
+   "What is the price of an additional seat on Team?",
+   "What do I pay per extra user on Team?"
+  ],
+  "keywords": [
+   "6"
+  ],
+  "docs": [
+   "pricing.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "extra_seat:business",
+  "family": "extra_seat",
+  "q": "How much does an extra seat cost on the Business plan?",
+  "paraphrases": [
+   "What is the price of an additional seat on Business?",
+   "What do I pay per extra user on Business?"
+  ],
+  "keywords": [
+   "4"
+  ],
+  "docs": [
+   "pricing.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "region_fee:team",
+  "family": "region_fee",
+  "q": "What does it cost a Team workspace to change region?",
+  "paraphrases": [
+   "How much is a region migration on the Team plan?",
+   "Is there a fee for moving a Team workspace to another region?"
+  ],
+  "keywords": [
+   "150"
+  ],
+  "docs": [
+   "data-residency.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "region_fee:business",
+  "family": "region_fee",
+  "q": "What does it cost a Business workspace to change region?",
+  "paraphrases": [
+   "How much is a region migration on the Business plan?",
+   "Is there a fee for moving a Business workspace to another region?"
+  ],
+  "keywords": [
+   [
+    "free",
+    "no fee",
+    "no charge",
+    "no cost"
+   ]
+  ],
+  "docs": [
+   "data-residency.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "refund_window:monthly",
+  "family": "refund_window",
+  "q": "What is the refund window for monthly plans?",
+  "paraphrases": [
+   "Within how many days can monthly plans be refunded?",
+   "How long do I have to request a refund on monthly subscriptions?"
+  ],
+  "keywords": [
+   "7"
+  ],
+  "docs": [
+   "refunds.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "refund_window:annual",
+  "family": "refund_window",
+  "q": "What is the refund window for annual plans?",
+  "paraphrases": [
+   "Within how many days can annual plans be refunded?",
+   "How long do I have to request a refund on annual subscriptions?"
+  ],
+  "keywords": [
+   "30"
+  ],
+  "docs": [
+   "refunds.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "mobile_os:ios",
+  "family": "mobile_os",
+  "q": "What is the minimum iOS version for the mobile app?",
+  "paraphrases": [
+   "Which iOS version does the Brightline mobile app need?",
+   "What iOS release is required to run the mobile app?"
+  ],
+  "keywords": [
+   "16"
+  ],
+  "docs": [
+   "sync-client.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "mobile_os:android",
+  "family": "mobile_os",
+  "q": "What is the minimum Android version for the mobile app?",
+  "paraphrases": [
+   "Which Android version does the Brightline mobile app need?",
+   "What Android release is required to run the mobile app?"
+  ],
+  "keywords": [
+   "11"
+  ],
+  "docs": [
+   "sync-client.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "single:00",
+  "family": null,
+  "q": "How long do refunds take to process?",
+  "paraphrases": [
+   "How many business days until a refund arrives?",
+   "What is the processing time for an approved refund?"
+  ],
+  "keywords": [
+   "5",
+   "10"
+  ],
+  "docs": [
+   "refunds.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "single:01",
+  "family": null,
+  "q": "What encryption is used for data at rest?",
+  "paraphrases": [
+   "How is stored data encrypted?",
+   "Which cipher protects files at rest?"
+  ],
+  "keywords": [
+   [
+    "aes-256",
+    "aes 256"
+   ]
+  ],
+  "docs": [
+   "security.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "single:02",
+  "family": null,
+  "q": "Which plans support hardware security keys?",
+  "paraphrases": [
+   "On which plans can I use a hardware key for 2FA?",
+   "Are hardware security keys available on every plan?"
+  ],
+  "keywords": [
+   "team",
+   "business"
+  ],
+  "docs": [
+   "security.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "single:03",
+  "family": null,
+  "q": "After how many days do API keys expire?",
+  "paraphrases": [
+   "How long is an API key valid before it expires?",
+   "What is the lifetime of an API key if I never rotate it?"
+  ],
+  "keywords": [
+   "90"
+  ],
+  "docs": [
+   "api.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "single:04",
+  "family": null,
+  "q": "Which languages does support cover?",
+  "paraphrases": [
+   "In what languages can I contact support?",
+   "What languages are offered by the support team?"
+  ],
+  "keywords": [
+   "english",
+   "hindi",
+   "spanish"
+  ],
+  "docs": [
+   "support.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "single:05",
+  "family": null,
+  "q": "Which data regions are available?",
+  "paraphrases": [
+   "Where can my workspace be hosted?",
+   "What hosting regions does Brightline offer?"
+  ],
+  "keywords": [
+   "mumbai",
+   "frankfurt",
+   "virginia"
+  ],
+  "docs": [
+   "data-residency.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "single:06",
+  "family": null,
+  "q": "How long does a region migration take?",
+  "paraphrases": [
+   "How many hours does changing region take?",
+   "What is the duration of a region change?"
+  ],
+  "keywords": [
+   "72"
+  ],
+  "docs": [
+   "data-residency.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "single:07",
+  "family": null,
+  "q": "After how many days do share links expire by default?",
+  "paraphrases": [
+   "What is the default expiry of a share link?",
+   "How long does a shared link stay active by default?"
+  ],
+  "keywords": [
+   "14"
+  ],
+  "docs": [
+   "sharing.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "single:08",
+  "family": null,
+  "q": "How long is the grace period after deleting a workspace?",
+  "paraphrases": [
+   "For how many days can a deleted workspace be restored?",
+   "What is the restore window after workspace deletion?"
+  ],
+  "keywords": [
+   "14"
+  ],
+  "docs": [
+   "account-deletion.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "single:09",
+  "family": null,
+  "q": "What is the maximum file size for the desktop client?",
+  "paraphrases": [
+   "How large a file can the desktop app sync?",
+   "What is the biggest file the desktop client handles?"
+  ],
+  "keywords": [
+   "50"
+  ],
+  "docs": [
+   "sync-client.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "single:10",
+  "family": null,
+  "q": "At what battery level does sync pause?",
+  "paraphrases": [
+   "When does syncing stop because of low battery?",
+   "Below what battery percentage is sync paused?"
+  ],
+  "keywords": [
+   "15"
+  ],
+  "docs": [
+   "sync-client.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "single:11",
+  "family": null,
+  "q": "What GST rate applies to Indian customers?",
+  "paraphrases": [
+   "How much GST is added for customers in India?",
+   "What tax percentage do Indian customers pay?"
+  ],
+  "keywords": [
+   "18"
+  ],
+  "docs": [
+   "billing.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "single:12",
+  "family": null,
+  "q": "How many times is a failed payment retried?",
+  "paraphrases": [
+   "How many retry attempts follow a failed charge?",
+   "What is the number of retries after a payment fails?"
+  ],
+  "keywords": [
+   [
+    "3",
+    "three"
+   ]
+  ],
+  "docs": [
+   "billing.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "single:13",
+  "family": null,
+  "q": "How long is the free trial?",
+  "paraphrases": [
+   "How many days does the Team trial last?",
+   "What is the length of the trial period?"
+  ],
+  "keywords": [
+   "14"
+  ],
+  "docs": [
+   "onboarding.md"
+  ],
+  "difficulty": "easy",
+  "split": "test"
+ },
+ {
+  "id": "single:14",
+  "family": null,
+  "q": "Up to how much data can be migrated for free?",
+  "paraphrases": [
+   "What is the free migration allowance?",
+   "How many GB does the migration tool import at no cost?"
+  ],
+  "keywords": [
+   "500"
+  ],
+  "docs": [
+   "onboarding.md"
+  ],
+  "difficulty": "easy",
+  "split": "tune"
+ },
+ {
+  "id": "hard:00",
+  "family": null,
+  "q": "What is the total monthly cost of a Team plan with 12 seats and 1.3 TB of storage?",
+  "paraphrases": [
+   "How much per month would Team cost for 12 users and 1.3 TB?",
+   "If I need 12 seats and 1.3 TB on Team, what is my monthly bill?"
+  ],
+  "keywords": [
+   "76"
+  ],
+  "docs": [
+   "pricing.md"
+  ],
+  "difficulty": "hard",
+  "split": "tune"
+ },
+ {
+  "id": "hard:01",
+  "family": null,
+  "q": "How much does the Business plan cost for a full year with annual billing?",
+  "paraphrases": [
+   "What is the yearly price of Business when paid annually?",
+   "If I pay annually, what does one year of Business cost in total?"
+  ],
+  "keywords": [
+   [
+    "1910.4",
+    "1910.40"
+   ]
+  ],
+  "docs": [
+   "pricing.md"
+  ],
+  "difficulty": "hard",
+  "split": "test"
+ },
+ {
+  "id": "hard:02",
+  "family": null,
+  "q": "If a payment keeps failing, how many days after the first failure is the workspace suspended?",
+  "paraphrases": [
+   "Counting from the first failed charge, when does suspension happen?",
+   "How long from the first failed payment until the workspace is suspended?"
+  ],
+  "keywords": [
+   "30"
+  ],
+  "docs": [
+   "billing.md"
+  ],
+  "difficulty": "hard",
+  "split": "tune"
+ },
+ {
+  "id": "hard:03",
+  "family": null,
+  "q": "Compare backup frequency and retention between Starter and Business.",
+  "paraphrases": [
+   "How do Starter and Business differ on backup schedule and how long backups are kept?",
+   "What are the backup frequency and retention differences between Starter and Business?"
+  ],
+  "keywords": [
+   [
+    "daily",
+    "every day"
+   ],
+   [
+    "hourly",
+    "every hour"
+   ],
+   "30",
+   "365"
+  ],
+  "docs": [
+   "backups.md"
+  ],
+  "difficulty": "hard",
+  "split": "test"
+ },
+ {
+  "id": "hard:04",
+  "family": null,
+  "q": "I am on Team and want to move my data from Virginia to Mumbai; what does it cost and how long does it take?",
+  "paraphrases": [
+   "What are the fee and duration for a Team workspace migrating from Virginia to Mumbai?",
+   "Moving a Team workspace to the Mumbai region: how much and how many hours?"
+  ],
+  "keywords": [
+   "150",
+   "72"
+  ],
+  "docs": [
+   "data-residency.md"
+  ],
+  "difficulty": "hard",
+  "split": "tune"
+ },
+ {
+  "id": "hard:05",
+  "family": null,
+  "q": "Which plan do I need for both SSO and unlimited guest collaborators, and what does it cost per month?",
+  "paraphrases": [
+   "What is the monthly price of the plan that has SAML SSO and unlimited guests?",
+   "I want single sign-on plus unlimited guests; which plan and what monthly price?"
+  ],
+  "keywords": [
+   "business",
+   "199"
+  ],
+  "docs": [
+   "security.md",
+   "sharing.md",
+   "pricing.md"
+  ],
+  "difficulty": "hard",
+  "split": "test"
+ },
+ {
+  "id": "hard:06",
+  "family": null,
+  "q": "What is the cheapest plan with both password-protected share links and hardware security keys, and its monthly price?",
+  "paraphrases": [
+   "Which is the lowest-priced plan offering hardware keys and password-protected links, and what does it cost monthly?",
+   "I need password-protected links and hardware key 2FA; what is the cheapest plan and its price per month?"
+  ],
+  "keywords": [
+   "team",
+   "49"
+  ],
+  "docs": [
+   "sharing.md",
+   "security.md",
+   "pricing.md"
+  ],
+  "difficulty": "hard",
+  "split": "tune"
+ },
+ {
+  "id": "hard:07",
+  "family": null,
+  "q": "How much would it cost to migrate 800 GB from Dropbox?",
+  "paraphrases": [
+   "What is the migration fee for importing 800 GB?",
+   "If I import 800 GB with the migration tool, what do I pay?"
+  ],
+  "keywords": [
+   "6"
+  ],
+  "docs": [
+   "onboarding.md"
+  ],
+  "difficulty": "hard",
+  "split": "test"
+ },
+ {
+  "id": "hard:08",
+  "family": null,
+  "q": "If I delete my workspace today, what is the maximum number of days until my data is permanently purged?",
+  "paraphrases": [
+   "After deleting a workspace, how many days at most until everything is purged for good?",
+   "What is the longest time between workspace deletion and permanent data purge?"
+  ],
+  "keywords": [
+   "44"
+  ],
+  "docs": [
+   "account-deletion.md"
+  ],
+  "difficulty": "hard",
+  "split": "tune"
+ },
+ {
+  "id": "hard:09",
+  "family": null,
+  "q": "What is the monthly price of the Starter plan including GST for an Indian customer?",
+  "paraphrases": [
+   "How much does Starter cost per month in India once GST is added?",
+   "With GST included, what does an Indian customer pay monthly for Starter?"
+  ],
+  "keywords": [
+   "10.62"
+  ],
+  "docs": [
+   "pricing.md",
+   "billing.md"
+  ],
+  "difficulty": "hard",
+  "split": "test"
+ },
+ {
+  "id": "hard:10",
+  "family": null,
+  "q": "How many API requests can a Business workspace make in one hour at the rate limit?",
+  "paraphrases": [
+   "At the maximum rate, how many API calls per hour does Business allow?",
+   "What is the hourly API request ceiling for a Business workspace?"
+  ],
+  "keywords": [
+   "180000"
+  ],
+  "docs": [
+   "api.md"
+  ],
+  "difficulty": "hard",
+  "split": "tune"
+ },
+ {
+  "id": "hard:11",
+  "family": null,
+  "q": "Can I sync a 60 GB file with the desktop client, and if not, what is the alternative?",
+  "paraphrases": [
+   "Is a 60 GB file too large for the desktop app, and how else could I upload it?",
+   "What should I do to upload a 60 GB file if the desktop client cannot handle it?"
+  ],
+  "keywords": [
+   "multipart"
+  ],
+  "docs": [
+   "sync-client.md",
+   "api.md"
+  ],
+  "difficulty": "hard",
+  "split": "test"
+ },
+ {
+  "id": "hard:12",
+  "family": null,
+  "q": "What support channel and response time would I get after upgrading from Starter to Business?",
+  "paraphrases": [
+   "If I move from Starter to Business, how can I reach support and how fast do they respond?",
+   "After upgrading from Starter to Business, what support channel and reply time apply?"
+  ],
+  "keywords": [
+   "phone",
+   [
+    "1 hour",
+    "one hour",
+    "1-hour"
+   ]
+  ],
+  "docs": [
+   "support.md"
+  ],
+  "difficulty": "hard",
+  "split": "tune"
+ },
+ {
+  "id": "hard:13",
+  "family": null,
+  "q": "For a 14-person team that needs 90-day backup retention, what is the monthly cost on the cheapest suitable plan?",
+  "paraphrases": [
+   "What would a team of 14 pay per month on the cheapest plan with 90-day backup retention?",
+   "We are 14 people and need backups kept 90 days; what is the lowest monthly cost?"
+  ],
+  "keywords": [
+   "73"
+  ],
+  "docs": [
+   "pricing.md",
+   "backups.md"
+  ],
+  "difficulty": "hard",
+  "split": "test"
+ }
+]
