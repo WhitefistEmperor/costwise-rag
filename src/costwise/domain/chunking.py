@@ -1,8 +1,8 @@
-"""Splits markdown documents into one chunk per `##` section, prefixed with the doc title."""
+"""Splits markdown documents into one chunk per `##` section, prefixed with the doc title.
+Pure: reading the files is done by adapters/corpus.py."""
 from __future__ import annotations
 
 import hashlib
-from pathlib import Path
 
 from .models import Chunk
 
@@ -34,16 +34,6 @@ def chunk_markdown(doc: str, text: str, doc_hash: str) -> list[Chunk]:
             body.append(line)
     flush()
     return [Chunk(id=f"{doc}#{i}", doc=doc, doc_hash=doc_hash, text=s) for i, s in enumerate(sections)]
-
-
-def load_corpus(corpus_dir: Path) -> list[Chunk]:
-    chunks: list[Chunk] = []
-    for path in sorted(Path(corpus_dir).glob("*.md")):
-        data = path.read_bytes()
-        chunks.extend(chunk_markdown(path.name, data.decode("utf-8"), file_hash(data)))
-    if not chunks:
-        raise ValueError(f"no markdown documents found in {corpus_dir}")
-    return chunks
 
 
 def doc_hashes(chunks: list[Chunk]) -> dict[str, str]:

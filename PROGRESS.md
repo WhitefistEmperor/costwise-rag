@@ -74,10 +74,10 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
 
   | config | correct | mock cost | routes | cache hits | escalations |
   |---|---|---|---|---|---|
-  | baseline_always_large | 124/140 | $0.3242 | {'large': 140} | 0 (0 wrong) | 0 |
+  | baseline_always_large | 124/140 | $0.3239 | {'large': 140} | 0 (0 wrong) | 0 |
   | always_small | 124/140 | $0.0162 | {'small': 140} | 0 (0 wrong) | 0 |
   | router_only | 124/140 | $0.0816 | {'small': 112, 'large': 28} | 0 (0 wrong) | 0 |
-  | cache_only | 124/140 | $0.1956 | {'large': 84, 'cache': 56} | 56 (2 wrong) | 0 |
+  | cache_only | 124/140 | $0.1955 | {'large': 84, 'cache': 56} | 56 (2 wrong) | 0 |
   | full | 124/140 | $0.0502 | {'small': 67, 'large': 17, 'cache': 56} | 56 (2 wrong) | 0 |
 
 **Phases 0 to 5 are done. What remains (Phase 6) spends OpenRouter credit and needs Sahil's

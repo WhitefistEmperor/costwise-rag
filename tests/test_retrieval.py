@@ -3,7 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from costwise.domain.chunking import chunk_markdown, doc_hashes, load_corpus
+from costwise.adapters.corpus import load_corpus
+from costwise.domain.chunking import chunk_markdown, doc_hashes
 
 
 def test_chunking_one_chunk_per_section_with_title():

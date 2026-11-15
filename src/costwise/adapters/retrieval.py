@@ -68,15 +68,20 @@ class BM25Index:
 
 
 class HybridRetriever:
-    """Reciprocal rank fusion of the dense and BM25 rankings: score = sum(1 / (rrf_k + rank))."""
+    """Reciprocal rank fusion of the dense and BM25 rankings: score = sum(1 / (rrf_k + rank)).
+
+    Only chunks BM25 actually matched (score > 0) are in the BM25 ranking; a chunk with no query
+    term gets no lexical rank credit. Every chunk is in the dense ranking."""
 
     def __init__(self, dense: DenseIndex, bm25: BM25Index, rrf_k: int = 60, depth: int = 20):
         self.dense, self.bm25, self.rrf_k, self.depth = dense, bm25, rrf_k, depth
 
     def search(self, query: str, qvec: np.ndarray, k: int) -> list[Hit]:
         d, b = self.dense.scores(qvec), self.bm25.scores(query)
+        dense_rank = np.argsort(-d, kind="stable")[: self.depth]
+        bm25_rank = [i for i in np.argsort(-b, kind="stable") if b[i] > 0][: self.depth]
         fused: dict[int, float] = {}
-        for ranking in (np.argsort(-d, kind="stable")[: self.depth], np.argsort(-b, kind="stable")[: self.depth]):
+        for ranking in (dense_rank, bm25_rank):
             for rank, i in enumerate(ranking):
                 fused[int(i)] = fused.get(int(i), 0.0) + 1.0 / (self.rrf_k + rank + 1)
         top = sorted(fused, key=lambda i: (-fused[i], i))[:k]

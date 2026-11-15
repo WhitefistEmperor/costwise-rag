@@ -6,7 +6,7 @@ import pytest
 
 from costwise.adapters.embedders import HashEmbedder
 from costwise.adapters.retrieval import build_retrievers
-from costwise.domain.chunking import load_corpus
+from costwise.adapters.corpus import load_corpus
 from costwise.settings import Settings
 
 DOCS = {

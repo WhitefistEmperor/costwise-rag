@@ -10,7 +10,8 @@ from ..adapters.retrieval import build_retrievers
 from ..adapters.storage import SQLiteCacheStore, SQLiteRequestLog
 from ..adapters.verifiers import KeyTermGuard, LLMVerifier
 from ..domain.cache import SemanticCache
-from ..domain.chunking import doc_hashes, load_corpus
+from ..adapters.corpus import load_corpus
+from ..domain.chunking import doc_hashes
 from ..domain.models import Chunk
 from ..domain.pipeline import Pipeline
 from ..domain.ports import Embedder, LLMClient, Router

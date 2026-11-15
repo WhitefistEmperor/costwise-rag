@@ -15,7 +15,7 @@ from ..adapters.embedders import SentenceTransformerEmbedder
 from ..adapters.retrieval import build_retrievers
 from ..adapters.verifiers import KeyTermGuard
 from ..domain.cache import SemanticCache
-from ..domain.chunking import load_corpus
+from ..adapters.corpus import load_corpus
 from ..domain.models import CacheEntry
 from ..domain.ports import Embedder, Router, Verifier
 from ..domain.routing import FEATURE_NAMES, HeuristicRouter, LearnedRouter, decide, features

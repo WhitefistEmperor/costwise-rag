@@ -27,7 +27,8 @@ from ..adapters.llm import MockLLM, ProviderError
 from ..adapters.retrieval import build_retrievers
 from ..adapters.storage import SQLiteRequestLog
 from ..app.container import build_cache, build_embedder, build_llm, build_router
-from ..domain.chunking import doc_hashes, load_corpus
+from ..adapters.corpus import load_corpus
+from ..domain.chunking import doc_hashes
 from ..domain.models import LLMResult
 from ..domain.pipeline import Pipeline
 from ..domain.ports import LLMClient

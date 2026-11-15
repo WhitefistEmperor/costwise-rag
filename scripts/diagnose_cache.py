@@ -7,7 +7,7 @@ import sys
 from costwise.adapters.embedders import SentenceTransformerEmbedder
 from costwise.adapters.retrieval import build_retrievers
 from costwise.adapters.verifiers import KeyTermGuard
-from costwise.domain.chunking import load_corpus
+from costwise.adapters.corpus import load_corpus
 from costwise.eval.dataset import load_questions
 from costwise.eval.offline import embed_questions, question_pairs, top_chunks
 from costwise.settings import Settings

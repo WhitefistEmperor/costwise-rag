@@ -49,6 +49,7 @@ src/costwise/
     retrieval.py   DenseIndex, BM25Index, HybridRetriever (rank fusion)
     verifiers.py   KeyTermGuard, CrossEncoderVerifier (optional)
     llm.py         OpenRouterLLM, MockLLM
+    corpus.py      reads the markdown corpus from disk (chunking itself stays pure in domain/)
     storage.py     SQLite cache store and request log
   app/           entry points
     container.py   builds a Pipeline from Settings
