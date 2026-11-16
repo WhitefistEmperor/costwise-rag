@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 from dataclasses import dataclass, field
 from typing import Sequence
@@ -63,6 +64,8 @@ class BudgetedLLM:
 
     def __init__(self, inner: LLMClient, max_cost_usd: float | None,
                  prices: dict[str, tuple[float, float]] | None = None):
+        if max_cost_usd is not None and not (math.isfinite(max_cost_usd) and max_cost_usd >= 0):
+            raise ValueError(f"max_cost_usd must be a finite number >= 0, got {max_cost_usd!r}")
         self.inner, self.max_cost_usd = inner, max_cost_usd
         self.prices = {**PRICES_PER_M, **(prices or {})}
         self.spent_usd, self.calls, self.retries = 0.0, 0, 0
@@ -252,10 +255,21 @@ def parse_price(text: str) -> tuple[str, tuple[float, float]]:
     return model, (inp, out)
 
 
+def parse_max_cost(text: str) -> float:
+    """A cap must be a finite number >= 0: "inf" would never stop and "nan" makes every check pass."""
+    try:
+        value = float(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a number: {text!r}")
+    if not math.isfinite(value) or value < 0:
+        raise argparse.ArgumentTypeError(f"must be a finite number >= 0, got {text!r}")
+    return value
+
+
 def main(argv: Sequence[str] | None = None) -> dict:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--live", action="store_true", help="spend OpenRouter credit (default: mock dry run)")
-    ap.add_argument("--max-cost", type=float, default=None,
+    ap.add_argument("--max-cost", type=parse_max_cost, default=None,
                     help="hard cap in USD (default 0.50 for --live; no cap for the mock dry run)")
     ap.add_argument("--seeds", type=int, default=2, help="number of stream seeds run back to back")
     ap.add_argument("--repeat-rate", type=float, default=0.5)

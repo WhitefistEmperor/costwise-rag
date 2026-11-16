@@ -177,3 +177,20 @@ def test_mock_cli_writes_strict_json_with_null_cap(live_settings, monkeypatch, t
     live.main(["--seeds", "1", "--configs", "full"])
     written = strict_loads((tmp_path / "results" / "live_mock.json").read_text(encoding="utf-8"))
     assert written["max_cost_usd"] is None
+
+
+@pytest.mark.parametrize("value", ["inf", "-inf", "nan", "-1"])
+def test_max_cost_must_be_finite_and_not_negative(value, live_settings, monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(live, "Settings", lambda: live_settings)
+    monkeypatch.setattr(live, "ROOT", tmp_path)
+    with pytest.raises(SystemExit) as exc:
+        live.main(["--seeds", "1", "--configs", "full", f"--max-cost={value}"])
+    assert exc.value.code == 2
+    assert "--max-cost" in capsys.readouterr().err
+    assert not (tmp_path / "results").exists()                  # refused before anything ran
+
+
+@pytest.mark.parametrize("value", [float("inf"), float("nan"), -0.01])
+def test_budgeted_llm_refuses_a_blind_cap(value):
+    with pytest.raises(ValueError):
+        BudgetedLLM(MockLLM(), value)

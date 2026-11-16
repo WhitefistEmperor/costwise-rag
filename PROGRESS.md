@@ -128,8 +128,8 @@ about $0.25 to $0.35; two seeds may touch the $0.50 cap, in which case the run s
 ## Independent check of the fixes (15 Nov, at 1538b07)
 All 12 reviewed defects are fixed; 153 tests pass with no network access; every number above
 reproduces from a fresh run. Still open from that check, to fix next (each with a test):
-- `--max-cost inf` (or `nan`) runs the whole config and then crashes when writing JSON, so the
-  results are lost; with `nan` the cap is also blind. Reject non-finite values when parsing.
+- FIXED (16 Nov): `--max-cost` must be a finite number >= 0; `inf`, `nan` and negatives are
+  refused by the parser (exit 2, nothing run) and by `BudgetedLLM` itself.
 - Ctrl+C (`KeyboardInterrupt`) during the live run writes nothing; save partial results first.
 - If the strong verifier raises (for example the budget cap), `SemanticCache.lookup` skips its
   stats and stale-entry cleanup for that lookup.
