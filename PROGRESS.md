@@ -113,6 +113,11 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
      broken f-string in `scripts/show_cache_eval.py`; removed the stale auto-save snapshot
      `PROGRESS-2026-11-15.md` (its open issues are folded in below).
 
+**16 Nov run (backlog A to H done):** the four open defects fixed with regression tests;
+README, charts, CI (green on GitHub Actions), `/metrics`, Docker (image built and smoke-tested
+with the hash embedder), load test; self-review of the diff since 5d8ba30 found only doc drift
+(fixed). 182 tests pass, none touch the network.
+
 **Phases 0 to 5 are done. What remains (Phase 6) spends OpenRouter credit and needs Sahil's
 go-ahead.** Command for the paid run (reads the key from the environment, never prints it):
 `PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --live --max-cost 0.50 --seeds 1 --strong-verifier llm`
@@ -161,6 +166,26 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
   embedder cache; key only from the runtime environment), `.dockerignore` (keeps .env, .venv,
   .git and .state out of the build context).
 
+## Resume bullets (DRAFT, 16 Nov)
+Offline numbers are real (results/offline.json, synthetic 12-document corpus, test split).
+Anything in [brackets] needs the paid Phase 6 run and must not be used until it exists.
+
+- Built a RAG service (FastAPI, hybrid BM25 + dense retrieval, SQLite) with a semantic cache and
+  a cost-aware small/large model router, cutting LLM cost by [X% vs always-large] and p95
+  latency by [Y ms] at [same / within Z points of] answer accuracy on a [N]-query live A/B.
+- Designed a two-threshold semantic cache with a rule-based key-term verifier (numbers, units,
+  plan names) that cut wrong cache hits from 134 to 40 of 350 queries at similarity 0.60, and
+  served 17/175 repeats with 5/350 wrong hits (1.4%) at the tune-chosen threshold; with a
+  perfect strong verifier in the band, up to 134/175 repeats (offline upper bound).
+- Trained a logistic-regression router on 7 query and retrieval features from 75 labelled
+  rows: 92.4% routing accuracy (97/105) on held-out questions, sending 18 of 21 hard questions
+  to the large model while sending only 23/105 there in total.
+- Hybrid retrieval with reciprocal rank fusion: recall@4 of 98.1% (103/105) vs 97.1% dense and
+  93.3% BM25 on held-out questions.
+- Engineered for honest evaluation: tune/test split for every threshold and weight, hard
+  budget cap checked before every paid call, mock runs labelled not real, Prometheus /metrics,
+  Docker, and CI running 182 offline tests on every push.
+
 ## Open issues
 - Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock
   numbers in results/live_mock.json are not real.
@@ -185,6 +210,7 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
 - API (mock model): `PYTHONPATH=src .venv/Scripts/python -m uvicorn costwise.app.api:app --reload`, then open http://127.0.0.1:8000/
 - API smoke: `PYTHONPATH=src .venv/Scripts/python scripts/smoke_api.py`
 - Live eval dry run (mock, free): `PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --seeds 2`
+- Charts: `.venv/Scripts/python scripts/make_charts.py` (writes docs/img/*.png)
 - Live eval paid run: add `--live --max-cost 0.50 --strong-verifier llm` (needs OPENROUTER_API_KEY;
   do not run without a yes). A model missing from `domain/pricing.py` needs
   `--price MODEL=IN,OUT` (USD per million tokens) or the run refuses to start.
