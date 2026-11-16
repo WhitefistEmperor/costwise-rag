@@ -108,18 +108,34 @@ cost and latency are **not real**; they only prove the harness runs end to end.
 | cache only | 124/140 | $0.1955 (mock) | large 84, cache 56 | 56 (2 wrong) |
 | full | 124/140 | $0.0502 (mock) | small 67, large 17, cache 56 | 56 (2 wrong) |
 
-### End to end, live (pending: not run)
+### End to end, live (one partial run, 16 Nov 2026)
 
-> **Placeholder.** Real cost per query, saving against always-large, p50/p95 latency and answer
-> accuracy per configuration would need a paid run on OpenRouter (the harness supports one with a
-> hard `--max-cost` cap). That run has not been made, so no live number exists and none is claimed.
+One paid run on OpenRouter (`results/live.json`): small `anthropic/claude-haiku-5.5`, large
+`anthropic/claude-sonnet-5.5`, 70-query stream from the test split (35 questions, 35 repeats),
+strong verifier on. It spent $0.1227 over 241 calls; then the OpenRouter account ran out of
+credit (HTTP 402), so three of the five configs stopped early. Their partial counts are kept and
+marked; costs are compared **per query**, because the configs answered different numbers of
+queries.
 
-| Config | Correct | Cost | Saving vs baseline | p50 / p95 latency |
-|---|---|---|---|---|
-| baseline | _TBD_ | _TBD_ | n/a | _TBD_ |
-| router only | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| cache only | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| full | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+| Config | Queries answered | Correct | Cost per query | vs baseline | p95 latency |
+|---|---|---|---|---|---|
+| baseline (always large) | 64 of 70 (stopped) | 60/64 (93.8%) | $0.00113 | n/a | 1558 ms |
+| always small | 70 of 70 | 66/70 (94.3%) | $0.000062 | 5.5% of the cost | 1487 ms |
+| router only | 70 of 70 | 66/70 (94.3%) | $0.00035 | 31.2% of the cost (68.8% saving) | 1485 ms |
+| cache only | 23 of 70 (stopped) | 22/23 | — | too few queries to compare | 2069 ms |
+| full (cache + router) | 12 of 70 (stopped) | 12/12 | — | too few queries to compare | 1150 ms |
+
+What this run shows, and what it does not:
+
+- **The router cut cost per query by 68.8% with no loss of accuracy** (66/70 against 60/64 for
+  always-large), sending 15 of 70 queries to the large model.
+- **On this data the small model alone was just as accurate** (66/70) at 5.5% of the cost. So the
+  router's large-model calls bought nothing here; the hand-labelled "hard" questions were not
+  hard for the small model. A harder question set is needed to show the router's value.
+- **The cache configs did not finish**, so this run measures no cache saving. In the 23 queries
+  it reached, the cache served 3 hits, all correct (0 wrong); the full config served 1, correct.
+- One seed of 35 synthetic questions: these numbers show the method works, not production
+  savings.
 
 ## How to run
 

@@ -6,8 +6,9 @@ Updated at every phase boundary. Plan: [docs/PLAN.md](docs/PLAN.md). Design: [do
 phase or sub-step, not one big commit, and push each one: `git push origin main`.
 Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
 
-**Rule from Sahil (16 Nov 2026): no paid evals.** Never run `costwise.eval.live --live` or spend
-OpenRouter credit. Live cost and latency stay unmeasured; only offline and mock runs.
+**Rule from Sahil (16 Nov 2026): no paid eval without his explicit yes in chat for that run.**
+He approved one capped run on 16 Nov (done, see Phase 6 below). Scheduled tasks and subagents
+must never run `costwise.eval.live --live`.
 
 ## Done
 - **Phase 0:** design doc, plan, 12-document synthetic corpus (39 chunks), 60 questions
@@ -143,13 +144,21 @@ README, charts, CI (green on GitHub Actions), `/metrics`, Docker (image built an
 with the hash embedder), load test; a self-review of every source, script and doc change since
 5d8ba30 found doc drift and two wording errors in the results (all fixed), no code defects. 182 tests pass, none touch the network.
 
-**Phases 0 to 5 are done. Phase 6 (the paid live run) is not planned:** Sahil does not allow
-paid evals (16 Nov 2026), so live cost, latency and answer quality stay marked pending in the
-README. The harness still supports `--live` (hard `--max-cost` cap, key read only from the
-environment); it is documented, not run.
+**Phases 0 to 5 are done.**
+
+- **Phase 6 (partial, 16 Nov, approved by Sahil):** one paid run, `--live --max-cost 0.50
+  --seeds 1 --strong-verifier llm`, results in `results/live.json`. Spent $0.1227 over 241 calls,
+  0 retries; then the OpenRouter account ran out of credit (HTTP 402), so baseline stopped at
+  64/70 queries, cache_only at 23/70 and full at 12/70 (partials kept, marked with the error).
+  - Per query: baseline $0.00113 (60/64 correct); always-small $0.000062 (66/70); router-only
+    $0.00035 (66/70), a 68.8% saving at no accuracy loss, 15/70 sent to large.
+  - The small model alone matched the large one on this set, so the router's large calls bought
+    nothing here. No cache saving was measured (cache configs incomplete; 4 hits, 0 wrong).
+  - README "End to end, live" holds the table and these caveats.
 
 ## Next steps
-1. Nothing required. Live numbers stay pending unless Sahil changes the no-paid-evals rule.
+1. Optional, needs Sahil's yes and more OpenRouter credit: finish the cache_only and full
+   configs (`--configs cache_only full`) to measure the cache saving.
 2. Later (optional): Quora Question Pairs cache benchmark (needs a dataset download; not done
    without a yes).
 
@@ -170,12 +179,12 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
 
 ## Resume bullets (DRAFT, 16 Nov)
 Offline numbers are real (results/offline.json, synthetic 12-document corpus, test split).
-Sahil does not allow paid eval runs (16 Nov 2026), so Phase 6 is not planned and these bullets
-use offline numbers only; none claims a measured cost or latency saving.
+Live numbers come from one partial paid run (results/live.json, 70-query stream, per query).
 
 - Built a RAG service (FastAPI, hybrid BM25 + dense retrieval, SQLite) with a verified semantic
-  cache and a cost-aware small/large model router, with per-request cost tracking, a dashboard
-  and an eval harness that A/B-tests five configurations under a hard budget cap.
+  cache and a cost-aware small/large model router; in a live A/B on OpenRouter the router cut
+  LLM cost per query by 68.8% versus always using the large model, at equal accuracy (66/70
+  vs 60/64), with an eval harness that A/B-tests five configurations under a hard budget cap.
 - Designed a two-threshold semantic cache with a rule-based key-term verifier (numbers, units,
   plan names) plus a same-evidence check that together cut wrong cache hits from 134 to 40 of
   350 queries at similarity 0.60 (the verifier alone: 134 to 63), and
