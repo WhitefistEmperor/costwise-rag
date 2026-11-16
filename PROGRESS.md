@@ -113,10 +113,32 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
      broken f-string in `scripts/show_cache_eval.py`; removed the stale auto-save snapshot
      `PROGRESS-2026-11-15.md` (its open issues are folded in below).
 
+- **Portfolio and ops work (16 Nov),** one commit each:
+  - **README.md (16 Nov):** portfolio README with a Mermaid diagram, design decisions and
+    alternatives, offline numbers from results/offline.json, mock numbers labelled not real, and
+    a placeholder table for the Phase 6 live numbers.
+  - **Charts (16 Nov):** `scripts/make_charts.py` draws docs/img/cache_thresholds.png (correct and
+    wrong hits per accept threshold and verifier variant) and docs/img/router_tradeoff.png
+    (accuracy vs share sent to large) from results/offline.json; linked from the README.
+  - **CI (16 Nov):** `.github/workflows/ci.yml` runs the suite on every push and pull request
+    (Python 3.11 and 3.12, CPU-only torch, `HF_HUB_OFFLINE=1`, mock model; no model download, no
+    network in tests, no secret).
+  - **/metrics (16 Nov):** `app/metrics.py` writes Prometheus text format 0.0.4 by hand (no new
+    dependency): requests by route, LLM and always-large cost, escalations, latency p50/p95 summary,
+    cache entries, lookups, hits by tier, rejections by reason, strong-verifier calls and cost.
+    `costwise_info{mock="true"}` marks mock cost as not real. Tests parse every exposition line.
+  - **Load test (16 Nov):** `scripts/load_test.py` sends N /ask requests with C in flight, in-process
+    (mock LLM, hash embedder, no download) or against `--url`, and reports throughput and p50/p95.
+    With the mock model it measures service overhead only, and its report says so.
+  - **Docker (16 Nov):** `Dockerfile` (python:3.12-slim, CPU-only torch, non-root user, mock LLM
+    by default, health check on /stats), `docker-compose.yml` (named volumes for state and the
+    embedder cache; key only from the runtime environment), `.dockerignore` (keeps .env, .venv,
+    .git and .state out of the build context).
+
 **16 Nov run (backlog A to H done):** the four open defects fixed with regression tests;
 README, charts, CI (green on GitHub Actions), `/metrics`, Docker (image built and smoke-tested
-with the hash embedder), load test; self-review of the diff since 5d8ba30 found only doc drift
-(fixed). 182 tests pass, none touch the network.
+with the hash embedder), load test; a self-review of every source, script and doc change since
+5d8ba30 found doc drift and two wording errors in the results (all fixed), no code defects. 182 tests pass, none touch the network.
 
 **Phases 0 to 5 are done. What remains (Phase 6) spends OpenRouter credit and needs Sahil's
 go-ahead.** Command for the paid run (reads the key from the environment, never prints it):
@@ -145,27 +167,6 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
   "800MB" conflict and "800GB" vs "800 GB" do not. Offline eval rerun: data/tuned.json and
   results/offline.json unchanged; mock live counts unchanged.
 
-- **README.md (16 Nov):** portfolio README with a Mermaid diagram, design decisions and
-  alternatives, offline numbers from results/offline.json, mock numbers labelled not real, and
-  a placeholder table for the Phase 6 live numbers.
-- **Charts (16 Nov):** `scripts/make_charts.py` draws docs/img/cache_thresholds.png (correct and
-  wrong hits per accept threshold and verifier variant) and docs/img/router_tradeoff.png
-  (accuracy vs share sent to large) from results/offline.json; linked from the README.
-- **CI (16 Nov):** `.github/workflows/ci.yml` runs the suite on every push and pull request
-  (Python 3.11 and 3.12, CPU-only torch, `HF_HUB_OFFLINE=1`, mock model; no model download, no
-  network in tests, no secret).
-- **/metrics (16 Nov):** `app/metrics.py` writes Prometheus text format 0.0.4 by hand (no new
-  dependency): requests by route, LLM and always-large cost, escalations, latency p50/p95 summary,
-  cache entries, lookups, hits by tier, rejections by reason, strong-verifier calls and cost.
-  `costwise_info{mock="true"}` marks mock cost as not real. Tests parse every exposition line.
-- **Load test (16 Nov):** `scripts/load_test.py` sends N /ask requests with C in flight, in-process
-  (mock LLM, hash embedder, no download) or against `--url`, and reports throughput and p50/p95.
-  With the mock model it measures service overhead only, and its report says so.
-- **Docker (16 Nov):** `Dockerfile` (python:3.12-slim, CPU-only torch, non-root user, mock LLM
-  by default, health check on /stats), `docker-compose.yml` (named volumes for state and the
-  embedder cache; key only from the runtime environment), `.dockerignore` (keeps .env, .venv,
-  .git and .state out of the build context).
-
 ## Resume bullets (DRAFT, 16 Nov)
 Offline numbers are real (results/offline.json, synthetic 12-document corpus, test split).
 Anything in [brackets] needs the paid Phase 6 run and must not be used until it exists.
@@ -188,6 +189,10 @@ Anything in [brackets] needs the paid Phase 6 run and must not be used until it 
   Docker, and CI running 182 offline tests on every push.
 
 ## Open issues
+- Docker: the image was built and run with `docker run` (hash embedder); `docker compose up`
+  itself (named volumes owned by uid 10001) and the MiniLM first-start download were not run.
+  A local test image `costwise-rag:test` is left on this machine (`docker rmi costwise-rag:test`).
+- README Mermaid diagram not checked as rendered on GitHub.
 - Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock
   numbers in results/live_mock.json are not real.
 - Cross-encoder and stronger embedding models need a download; not done without a yes.
