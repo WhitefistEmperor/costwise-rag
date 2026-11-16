@@ -143,6 +143,9 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
 - **README.md (16 Nov):** portfolio README with a Mermaid diagram, design decisions and
   alternatives, offline numbers from results/offline.json, mock numbers labelled not real, and
   a placeholder table for the Phase 6 live numbers.
+- **Charts (16 Nov):** `scripts/make_charts.py` draws docs/img/cache_thresholds.png (correct and
+  wrong hits per accept threshold and verifier variant) and docs/img/router_tradeoff.png
+  (accuracy vs share sent to large) from results/offline.json; linked from the README.
 
 ## Open issues
 - Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock

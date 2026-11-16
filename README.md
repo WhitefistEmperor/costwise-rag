@@ -82,7 +82,14 @@ only; the tuned config does not use it.
 "Hard" is a hand label, not an observed small-model failure; the live run decides whether it
 matters. The learned router fits all 75 tune rows, so it over-fits a little.
 
-<!-- charts -->
+**Charts** (drawn by `scripts/make_charts.py` from results/offline.json):
+
+![Correct and wrong cache hits across accept thresholds, per verifier variant](docs/img/cache_thresholds.png)
+
+The guard is what makes low thresholds usable: at 0.60 it cuts wrong hits from 134 (threshold
+only) to 40 while keeping more correct hits; at the tuned 0.88 it leaves 5 wrong of 350.
+
+![Router accuracy against share sent to the large model](docs/img/router_tradeoff.png)
 
 ### End to end (mock dry run: NOT real numbers)
 
@@ -133,6 +140,10 @@ PYTHONPATH=src .venv/Scripts/python -m costwise.eval.offline
 
 ```bash
 PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --seeds 2
+```
+
+```bash
+.venv/Scripts/python scripts/make_charts.py
 ```
 
 ```bash
