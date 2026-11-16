@@ -44,9 +44,14 @@ def build_llm(settings: Settings) -> LLMClient:
         if not key:
             raise RuntimeError("COSTWISE_LLM=zai but ZAI_API_KEY is not set in the environment")
         return ZaiLLM(key, settings.zai_base_url)
+    if settings.llm_provider == "bharatcode":
+        key = os.environ.get("BHARATCODE_API_KEY", "")
+        if not key:
+            raise RuntimeError("COSTWISE_LLM=bharatcode but BHARATCODE_API_KEY is not set in the environment")
+        return ZaiLLM(key, settings.bharatcode_base_url)
     if settings.llm_provider == "mock":
         return MockLLM()
-    raise ValueError(f"unknown llm provider {settings.llm_provider!r} (mock | openrouter | zai)")
+    raise ValueError(f"unknown llm provider {settings.llm_provider!r} (mock | openrouter | zai | bharatcode)")
 
 
 def build_router(settings: Settings, tuned: dict) -> Router | None:

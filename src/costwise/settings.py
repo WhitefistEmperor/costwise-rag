@@ -26,6 +26,7 @@ class Settings:
     llm_provider: str = field(default_factory=lambda: _env("LLM", "mock"))
     openrouter_base_url: str = field(default_factory=lambda: _env("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
     # "zai" provider: free GLM Flash on Z.ai. Base URL for Chinese platform: https://open.bigmodel.cn/api/paas/v4
+    bharatcode_base_url: str = field(default_factory=lambda: _env("BHARATCODE_BASE_URL", "https://bharatcode.ai/api/model/v1"))
     zai_base_url: str = field(default_factory=lambda: _env("ZAI_BASE_URL", "https://api.z.ai/api/paas/v4"))
     router: str = field(default_factory=lambda: _env("ROUTER", "learned"))     # learned | heuristic | none
     default_route: str = field(default_factory=lambda: _env("DEFAULT_ROUTE", "large"))   # when router is none

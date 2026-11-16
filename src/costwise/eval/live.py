@@ -281,6 +281,8 @@ def main(argv: Sequence[str] | None = None) -> dict:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--live", action="store_true", help="spend OpenRouter credit (default: mock dry run)")
     ap.add_argument("--zai", action="store_true", help="run live with Z.ai free GLM Flash (needs ZAI_API_KEY)")
+    ap.add_argument("--bharatcode", action="store_true",
+                    help="run live with Bharat Code GLM (needs BHARATCODE_API_KEY; free, no cost cap)")
     ap.add_argument("--max-cost", type=parse_max_cost, default=None,
                     help="hard cap in USD (default 0.50 for --live; no cap for the mock dry run)")
     ap.add_argument("--seeds", type=int, default=2, help="number of stream seeds run back to back")
@@ -292,12 +294,12 @@ def main(argv: Sequence[str] | None = None) -> dict:
                     help="MODEL=IN,OUT price override in USD per million tokens (for models not in the table)")
     ap.add_argument("--out", default=None, help="output JSON (default results/live.json or results/live_mock.json)")
     args = ap.parse_args(argv)
-    if args.live and args.zai:
-        raise SystemExit("--live and --zai are mutually exclusive")
+    if args.live + args.zai + args.bharatcode > 1:
+        raise SystemExit("--live, --zai and --bharatcode are mutually exclusive")
     settings = Settings()
     prices = dict(args.price)
     skip_price_check = False
-    is_live = args.live or args.zai
+    is_live = args.live or args.zai or args.bharatcode
     if args.live:
         settings.llm_provider = "openrouter"
         check_prices([settings.small_model, settings.large_model], prices)
@@ -305,13 +307,13 @@ def main(argv: Sequence[str] | None = None) -> dict:
             llm: LLMClient = build_llm(settings)       # the only place that reads OPENROUTER_API_KEY
         except RuntimeError as e:
             raise SystemExit(f"--live: {e}")
-    elif args.zai:
-        settings.llm_provider = "zai"
+    elif args.zai or args.bharatcode:
+        settings.llm_provider = "zai" if args.zai else "bharatcode"
         skip_price_check = True
         try:
             llm = build_llm(settings)
         except RuntimeError as e:
-            raise SystemExit(f"--zai: {e}")
+            raise SystemExit(f"--{settings.llm_provider}: {e}")
     else:
         llm = MockLLM()
     max_cost = args.max_cost if args.max_cost is not None else (0.50 if args.live else None)
