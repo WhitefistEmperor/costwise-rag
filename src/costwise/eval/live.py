@@ -10,7 +10,7 @@ cross the cap, the run stops and the partial results say so. A model with no pri
 refused at startup unless `--price MODEL=IN,OUT` (USD per million tokens) is given, because its
 estimate would be 0 and the cap blind. A provider error that survives the retries stops only the
 current config: it is marked with the error, its partial results are kept, and the run goes on.
-The results file is always written, as strict JSON.
+The results file is always written, as strict JSON, also after Ctrl+C (partial results, exit 130).
 
 Every percentage is written next to its counts. Thresholds and router weights come from
 data/tuned.json (fitted on the tune split); the stream is built from the test split.
@@ -122,6 +122,7 @@ class ConfigResult:
     strong_verifier_calls: int = 0
     stopped: str | None = None
     error: str | None = None
+    interrupted: bool = False           # Ctrl+C: partial counts kept, the run stops after this config
 
     def summary(self) -> dict:
         lat = self.latencies_ms
@@ -138,6 +139,7 @@ class ConfigResult:
             "wrong_cache_hits": self.wrong_cache_hits, "correct_on_cache_hits": self.correct_on_cache_hits,
             "escalations": self.escalations, "abstained_final": self.abstained,
             "strong_verifier_calls": self.strong_verifier_calls, "stopped": self.stopped, "error": self.error,
+            "interrupted": self.interrupted,
         }
 
 
@@ -160,6 +162,9 @@ def run_config(pipeline: Pipeline, stream: Sequence[Query], keywords: dict[str, 
             a = pipeline.ask(q.text, tag=q.qid)
         except BudgetExceeded as e:
             r.stopped = str(e)
+            break
+        except KeyboardInterrupt:                 # not an Exception: caught on its own
+            r.interrupted = True
             break
         except ProviderError as e:
             r.error = f"provider error: {e}"
@@ -232,8 +237,14 @@ def run(settings: Settings, llm: LLMClient, mock: bool, max_cost_usd: float | No
             result = run_config(pipeline, stream, keywords, qid_of)
         except Exception as e:                    # unexpected: keep what we have and stop cleanly
             result = ConfigResult(error=f"{type(e).__name__}: {e}")
+        except KeyboardInterrupt:                 # Ctrl+C while building the pipeline
+            result = ConfigResult(interrupted=True)
         result.llm_spent_usd = budget.spent_by_config.get(name, 0.0)
         out["configs"][name] = result.summary()
+        if result.interrupted:
+            out["stopped"] = f"interrupted (Ctrl+C) during config {name!r}"
+            out["interrupted"] = True
+            break
         if result.stopped:
             out["stopped"] = f"budget cap reached during config {name!r}"
             break
@@ -305,6 +316,8 @@ def main(argv: Sequence[str] | None = None) -> dict:
               f"routes {c['routes']}  esc {c['escalations']}" + ("  [MOCK, not real]" if result["mock"] else "")
               + (f"  ERROR: {c['error']}" if c["error"] else ""))
     print(f"\nwritten: {out}")
+    if result.get("interrupted"):
+        raise SystemExit(130)                     # partial results are on disk; exit like Ctrl+C
     return result
 
 

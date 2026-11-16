@@ -194,3 +194,25 @@ def test_max_cost_must_be_finite_and_not_negative(value, live_settings, monkeypa
 def test_budgeted_llm_refuses_a_blind_cap(value):
     with pytest.raises(ValueError):
         BudgetedLLM(MockLLM(), value)
+
+
+def test_ctrl_c_mid_run_writes_partial_results(live_settings, monkeypatch, tmp_path):
+    state = {"n": 0}
+
+    def respond(model, system, user):
+        state["n"] += 1
+        if state["n"] > 2:
+            raise KeyboardInterrupt
+        return user.split("Context:\n", 1)[-1].split("\n\nQuestion:", 1)[0]
+
+    monkeypatch.setattr(live, "Settings", lambda: live_settings)
+    monkeypatch.setattr(live, "ROOT", tmp_path)
+    monkeypatch.setattr(live, "MockLLM", lambda: MockLLM(respond=respond))
+    with pytest.raises(SystemExit) as exc:
+        live.main(["--seeds", "1", "--configs", "baseline_always_large", "always_small"])
+    assert exc.value.code == 130
+    written = strict_loads((tmp_path / "results" / "live_mock.json").read_text(encoding="utf-8"))
+    first = written["configs"]["baseline_always_large"]
+    assert first["queries"] == 2 and first["interrupted"] is True
+    assert written["interrupted"] is True and "interrupted" in written["stopped"]
+    assert list(written["configs"]) == ["baseline_always_large"]

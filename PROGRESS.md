@@ -130,7 +130,8 @@ All 12 reviewed defects are fixed; 153 tests pass with no network access; every 
 reproduces from a fresh run. Still open from that check, to fix next (each with a test):
 - FIXED (16 Nov): `--max-cost` must be a finite number >= 0; `inf`, `nan` and negatives are
   refused by the parser (exit 2, nothing run) and by `BudgetedLLM` itself.
-- Ctrl+C (`KeyboardInterrupt`) during the live run writes nothing; save partial results first.
+- FIXED (16 Nov): Ctrl+C during the live run keeps the partial counts of the current config,
+  writes the results file (marked `interrupted`) and then exits with code 130.
 - If the strong verifier raises (for example the budget cap), `SemanticCache.lookup` skips its
   stats and stale-entry cleanup for that lookup.
 - `KeyTermGuard` treats a unit-only change as the same question ("800GB" vs "800MB").
