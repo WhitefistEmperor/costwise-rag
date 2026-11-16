@@ -166,6 +166,19 @@ Then open http://127.0.0.1:8000/ for the dashboard, or `POST /ask` with `{"query
 rejections). With the mock model, `costwise_info{mock="true"}` marks the cost metrics as not real. The API uses the mock model unless
 `COSTWISE_LLM=openrouter` and `OPENROUTER_API_KEY` are set in the environment.
 
+### Docker
+
+```bash
+docker compose up --build
+```
+
+The API then serves on http://localhost:8000/ with the **mock model**; the SQLite cache and
+request log live in a named volume. The default embedder (MiniLM, about 90 MB) is downloaded once
+on first start into a second volume; `COSTWISE_EMBED_MODEL=hash docker compose up` runs with no
+download at all (weaker retrieval, demo only). No key is in the image or the compose file: for the
+paid model, set `COSTWISE_LLM=openrouter` and `OPENROUTER_API_KEY` in your shell before `up`, and
+compose passes them in at runtime.
+
 The paid live eval (`--live`) spends OpenRouter credit and stops at a hard cap; see
 [PROGRESS.md](PROGRESS.md) for the exact command.
 

@@ -1,0 +1,23 @@
+# docker compose up --build   ->  http://localhost:8000/ (dashboard), /ask, /stats, /metrics
+#
+# Mock LLM by default. For the paid OpenRouter model, set both in your shell before `up`:
+#   COSTWISE_LLM=openrouter and OPENROUTER_API_KEY=...   (never written to this file or the image)
+services:
+  api:
+    build: .
+    image: costwise-rag:latest
+    ports:
+      - "8000:8000"
+    environment:
+      COSTWISE_LLM: ${COSTWISE_LLM:-mock}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      # "hash" = no model download (offline demo, weaker retrieval); default downloads MiniLM once.
+      COSTWISE_EMBED_MODEL: ${COSTWISE_EMBED_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+    volumes:
+      - costwise-state:/app/.state   # SQLite cache and request log survive restarts
+      - costwise-hf:/app/.hf         # embedding model cache
+    restart: unless-stopped
+
+volumes:
+  costwise-state:
+  costwise-hf:

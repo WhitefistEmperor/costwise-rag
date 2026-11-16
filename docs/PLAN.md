@@ -12,4 +12,4 @@ any phase boundary. Design reasons are in [ARCHITECTURE.md](ARCHITECTURE.md).
 | 4 | Pipeline wiring, pricing, SQLite request log, FastAPI, dashboard | Tests pass; `/ask` works end to end with the mock model; dashboard shows stats |
 | 5 | Live eval harness with a hard budget cap, dry-run against the mock model | Dry run passes; the paid run is one command and waits for a go-ahead |
 | 6 | Paid live run, README with real numbers, resume bullets | Results table filled from a real run |
-| Later | Prometheus `/metrics` endpoint (done), Dockerfile, Quora Question Pairs cache benchmark | Optional |
+| Later | Prometheus `/metrics` endpoint (done), Dockerfile and compose (done), Quora Question Pairs cache benchmark | Optional |

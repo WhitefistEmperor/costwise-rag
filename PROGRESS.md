@@ -156,6 +156,10 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
 - **Load test (16 Nov):** `scripts/load_test.py` sends N /ask requests with C in flight, in-process
   (mock LLM, hash embedder, no download) or against `--url`, and reports throughput and p50/p95.
   With the mock model it measures service overhead only, and its report says so.
+- **Docker (16 Nov):** `Dockerfile` (python:3.12-slim, CPU-only torch, non-root user, mock LLM
+  by default, health check on /stats), `docker-compose.yml` (named volumes for state and the
+  embedder cache; key only from the runtime environment), `.dockerignore` (keeps .env, .venv,
+  .git and .state out of the build context).
 
 ## Open issues
 - Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock
@@ -187,4 +191,5 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
 - Router cue check: `PYTHONPATH=src .venv/Scripts/python scripts/filter_router_cues.py`
 - Tune-split cache diagnosis: `PYTHONPATH=src .venv/Scripts/python scripts/diagnose_cache.py 0.70`
 - Load test (mock, in-process): `PYTHONPATH=src .venv/Scripts/python scripts/load_test.py -n 200 -c 8`
+- Docker (mock model): `docker compose up --build`, then http://localhost:8000/
 - Never paste Python with quotes into a bash heredoc here; write a script file and run it.
