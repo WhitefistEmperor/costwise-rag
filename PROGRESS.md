@@ -146,6 +146,9 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
 - **Charts (16 Nov):** `scripts/make_charts.py` draws docs/img/cache_thresholds.png (correct and
   wrong hits per accept threshold and verifier variant) and docs/img/router_tradeoff.png
   (accuracy vs share sent to large) from results/offline.json; linked from the README.
+- **CI (16 Nov):** `.github/workflows/ci.yml` runs the suite on every push and pull request
+  (Python 3.11 and 3.12, CPU-only torch, `HF_HUB_OFFLINE=1`, mock model; no model download, no
+  network in tests, no secret).
 
 ## Open issues
 - Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock

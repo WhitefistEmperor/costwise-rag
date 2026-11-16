@@ -1,5 +1,7 @@
 # Costwise RAG
 
+![tests](https://github.com/WhitefistEmperor/costwise-rag/actions/workflows/ci.yml/badge.svg)
+
 A retrieval-augmented question-answering service that puts a **semantic cache** and a
 **cost-aware model router** in front of the LLM, so cheap questions go to a small model,
 repeated questions are answered from the cache, and only the hard ones pay for the large model.
