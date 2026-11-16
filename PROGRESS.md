@@ -155,10 +155,16 @@ with the hash embedder), load test; a self-review of every source, script and do
   - The small model alone matched the large one on this set, so the router's large calls bought
     nothing here. No cache saving was measured (cache configs incomplete; 4 hits, 0 wrong).
   - README "End to end, live" holds the table and these caveats.
+- **Phase 6b (16 Nov, approved by Sahil, his own paid Bharat Code key):** `--bharatcode --seeds 1
+  --configs baseline_always_large cache_only --strong-verifier llm --max-cost 0.60`, model
+  `glm-5.3-flash` as both small and large, results in `results/live_glm.json`. Both configs ran
+  all 70 queries. The cache answered 24 of 70 (23 right, 1 wrong) but its 26 verifier calls cost
+  more than they saved. Details in README. Real Bharat Code prices are not known; costs use an
+  assumed $1 / $4 per million tokens, only to drive the cap.
 
 ## Next steps
-1. Optional, needs Sahil's yes and more OpenRouter credit: finish the cache_only and full
-   configs (`--configs cache_only full`) to measure the cache saving.
+1. Optional: the router could not be tested on one model; the 68.8% router saving stays the
+   only router number. A cheaper non-thinking verifier would likely make the cache pay off.
 2. Later (optional): Quora Question Pairs cache benchmark (needs a dataset download; not done
    without a yes).
 

@@ -1,0 +1,87 @@
+{
+  "mock": false,
+  "note": "Live run on OpenRouter with a hard budget cap.",
+  "models": {
+    "small": "glm-5.3-flash",
+    "large": "glm-5.3-flash"
+  },
+  "split": "test",
+  "questions": 35,
+  "stream_queries": 70,
+  "stream_repeats": 35,
+  "repeat_rate": 0.5,
+  "seeds": [
+    0
+  ],
+  "max_cost_usd": 0.6,
+  "strong_verifier": "llm",
+  "price_overrides": {
+    "glm-5.3-flash": [
+      1.0,
+      4.0
+    ]
+  },
+  "tuned": {
+    "cache_threshold": 0.88,
+    "cache_candidate_threshold": 0.6,
+    "cache_verifier": "key_term_guard",
+    "cache_require_same_evidence": true,
+    "route_threshold": 0.5,
+    "heuristic_route_threshold": 0.4
+  },
+  "configs": {
+    "baseline_always_large": {
+      "queries": 70,
+      "correct": 66,
+      "accuracy": 0.9429,
+      "cost_usd": 0.033885,
+      "cost_per_query_usd": 0.000484,
+      "llm_spent_usd": 0.033885,
+      "always_large_cost_usd": 0.033885,
+      "latency_ms_p50": 5002.7,
+      "latency_ms_p95": 9876.2,
+      "routes": {
+        "large": 70
+      },
+      "cache_hits": 0,
+      "cache_hit_rate": 0.0,
+      "wrong_cache_hits": 0,
+      "correct_on_cache_hits": 0,
+      "escalations": 0,
+      "abstained_final": 4,
+      "strong_verifier_calls": 0,
+      "stopped": null,
+      "error": null,
+      "interrupted": false
+    },
+    "cache_only": {
+      "queries": 70,
+      "correct": 65,
+      "accuracy": 0.9286,
+      "cost_usd": 0.036001,
+      "cost_per_query_usd": 0.000514,
+      "llm_spent_usd": 0.036001,
+      "always_large_cost_usd": 0.033628,
+      "latency_ms_p50": 4825.9,
+      "latency_ms_p95": 10162.8,
+      "routes": {
+        "large": 46,
+        "cache": 24
+      },
+      "cache_hits": 24,
+      "cache_hit_rate": 0.3429,
+      "wrong_cache_hits": 1,
+      "correct_on_cache_hits": 23,
+      "escalations": 0,
+      "abstained_final": 4,
+      "strong_verifier_calls": 26,
+      "stopped": null,
+      "error": null,
+      "interrupted": false
+    }
+  },
+  "started": "2026-11-16 20:28:10",
+  "total_spent_usd": 0.069886,
+  "total_llm_calls": 142,
+  "total_retries": 1
+}

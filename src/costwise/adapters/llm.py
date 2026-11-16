@@ -141,11 +141,12 @@ class ZaiLLM:
 
     def __init__(self, api_key: str, base_url: str = "https://api.z.ai/api/paas/v4",
                  timeout_s: float = 60.0, transport: httpx.BaseTransport | None = None,
-                 max_retries: int = 2, backoff_s: float = 2.0,
-                 sleep: Callable[[float], None] = time.sleep):
+                 max_retries: int = 6, backoff_s: float = 3.0,
+                 sleep: Callable[[float], None] = time.sleep, min_interval_s: float = 2.0):
         if not api_key:
             raise ValueError("ZaiLLM needs an API key (set ZAI_API_KEY in the environment)")
         self.max_retries, self.backoff_s, self._sleep = max_retries, backoff_s, sleep
+        self.min_interval_s, self._last_call = min_interval_s, 0.0
         self.before_retry: Callable[[str, str, str, int], None] | None = None
         self._client = httpx.Client(base_url=base_url, timeout=timeout_s, transport=transport,
                                     headers={"Authorization": f"Bearer {api_key}"})
@@ -164,9 +165,13 @@ class ZaiLLM:
         return r
 
     def complete(self, model: str, system: str, user: str, max_tokens: int) -> LLMResult:
-        body = {"model": model, "max_tokens": max_tokens, "temperature": 0,
+        # Thinking models spend output tokens before answering and reject tiny limits.
+        body = {"model": model, "max_tokens": max(max_tokens, 1024), "temperature": 0,
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
         attempt = 0
+        wait = self.min_interval_s - (time.monotonic() - self._last_call)
+        if wait > 0:
+            self._sleep(wait)
         while True:
             t0 = time.perf_counter()
             try:
@@ -179,6 +184,7 @@ class ZaiLLM:
                 attempt += 1
                 if self.before_retry is not None:
                     self.before_retry(model, system, user, max_tokens)
+        self._last_call = time.monotonic()
         latency = (time.perf_counter() - t0) * 1000
         try:
             data = r.json()

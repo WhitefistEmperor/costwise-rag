@@ -8,8 +8,8 @@ repeated questions are answered from the cache, and only the hard ones pay for t
 
 The project's one claim is meant to be measured, not asserted: *lower LLM cost and p95 latency at
 the same answer quality.* Every number below comes from a reproducible eval in this repo. The
-offline numbers are real; **the cost and latency numbers need a paid live run that has not been
-done yet** (see [Results](#results)).
+offline numbers are real, and two small paid live runs (router; cache) are reported in
+[Results](#results) with their limits.
 
 ## How it works
 
@@ -136,6 +136,24 @@ What this run shows, and what it does not:
   it reached, the cache served 3 hits, all correct (0 wrong); the full config served 1, correct.
 - One seed of 35 synthetic questions: these numbers show the method works, not production
   savings.
+
+### Cache, live, on one model (16 Nov 2026)
+
+Both configs on `glm-5.3-flash` (a "thinking" model, via Bharat Code, small = large), the same
+70-query stream, strong verifier on (`results/live_glm.json`). One model means no router test;
+this measures only the cache. Costs use an **assumed** $1 / $4 per million tokens (the real rate
+is not known), so read them as relative.
+
+| Config | Correct | Answer calls | Verifier calls | Cache hits | Assumed cost | p95 latency |
+|---|---|---|---|---|---|---|
+| baseline (always ask) | 66/70 (94.3%) | 70 | 0 | n/a | $0.0339 | 9.9 s |
+| cache only | 65/70 (92.9%) | 46 | 26 | 24/70 (34.3%), 23 right, 1 wrong | $0.0360 | 10.2 s |
+
+- **The cache removed 24 of 70 model answers** (34%), with 1 wrong hit.
+- **It did not save money here:** the 26 verifier calls, each of which makes the thinking model
+  reason before answering YES/NO, cost about 6% more than they saved. A cheap non-thinking
+  verifier, or a cross-encoder, is the fix; this run shows the trade-off rather than a saving.
+- Accuracy 65 vs 66 is within noise at 70 queries; one seed, one synthetic corpus.
 
 ## How to run
 
