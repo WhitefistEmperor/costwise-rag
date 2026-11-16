@@ -47,7 +47,7 @@ src/costwise/
   adapters/      everything that touches the outside world
     embedders.py   SentenceTransformerEmbedder, HashEmbedder (tests)
     retrieval.py   DenseIndex, BM25Index, HybridRetriever (rank fusion)
-    verifiers.py   KeyTermGuard, CrossEncoderVerifier (optional)
+    verifiers.py   KeyTermGuard, LLMVerifier (strong, paid), CrossEncoderVerifier (optional)
     llm.py         OpenRouterLLM, MockLLM
     corpus.py      reads the markdown corpus from disk (chunking itself stays pure in domain/)
     storage.py     SQLite cache store and request log
@@ -60,6 +60,7 @@ src/costwise/
     dataset.py     questions, splits, query stream
     offline.py     retrieval, cache and router evals (no LLM, free)
     live.py        end-to-end A/B with a hard budget cap
+scripts/         eval views, charts (make_charts.py), load test (load_test.py), API smoke test
 ```
 
 Why this shape: the cache and router are the product, so they sit in `domain/` as plain Python
@@ -90,8 +91,9 @@ must also agree, and it is called at most once per lookup.
 Verifier options, all behind one `Verifier` interface:
 
 - **KeyTermGuard (default, free):** rejects the pair if the numbers differ as a set, or if each
-  question has an entity term the other lacks (plan names, regions, "monthly" vs "annual").
-  Entity terms are extracted from the corpus. Deterministic, no model download, easy to explain.
+  question has a key term the other lacks (plan names, regions, "monthly" vs "annual", or the
+  unit after a number: "800GB" vs "800MB"). Numbers are compared exactly, also when glued to
+  letters ("6h", "v2"). Entity terms are extracted from the corpus. Deterministic, no model download, easy to explain.
 - **LLMVerifier (strong, paid):** asks the small model "same information? YES or NO" with a
   three-token answer. About 0.5% of the cost of a large-model answer, so a cache that only
   pays it on real candidates still saves money. Its cost is charged to the request, hit or miss.
