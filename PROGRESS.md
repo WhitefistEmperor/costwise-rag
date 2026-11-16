@@ -132,8 +132,9 @@ reproduces from a fresh run. Still open from that check, to fix next (each with 
   refused by the parser (exit 2, nothing run) and by `BudgetedLLM` itself.
 - FIXED (16 Nov): Ctrl+C during the live run keeps the partial counts of the current config,
   writes the results file (marked `interrupted`) and then exits with code 130.
-- If the strong verifier raises (for example the budget cap), `SemanticCache.lookup` skips its
-  stats and stale-entry cleanup for that lookup.
+- FIXED (16 Nov): when the strong verifier raises (budget cap, provider error),
+  `SemanticCache.lookup` still records the checks it made and removes stale entries, then
+  re-raises; the failed call is not counted.
 - `KeyTermGuard` treats a unit-only change as the same question ("800GB" vs "800MB").
 
 ## Open issues

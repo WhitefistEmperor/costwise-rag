@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from costwise.adapters.storage import SQLiteCacheStore
 from costwise.adapters.verifiers import CrossEncoderVerifier, KeyTermGuard, extract_entity_terms
@@ -248,3 +249,23 @@ def test_evidence_key_survives_a_sqlite_round_trip(tmp_path):
     assert reloaded.entries[0].tag == "t1"
     assert reloaded.lookup("q1 again", vec(1, 0.05), evidence_key="pricing.md#0").hit.entry.query == "q1"
     assert reloaded.lookup("q1 again", vec(1, 0.05), evidence_key="pricing.md#1").hit is None
+
+
+def test_raising_strong_verifier_still_records_stats_and_drops_stale_entries():
+    class Boom:
+        name = "boom"
+
+        def judge(self, a, b):
+            raise RuntimeError("budget cap")
+
+    now = [0.0]
+    cache = SemanticCache(0.99, ttl_s=10, clock=lambda: now[0], candidate_threshold=0.5, strong_verifier=Boom())
+    cache.put(entry("old", created=0.0), vec(1, 0))            # most similar, but will be stale
+    now[0] = 5
+    cache.put(entry("band", created=5.0), vec(1, 0.6))         # in the band
+    now[0] = 12                                                # "old" expired, "band" still fresh
+    with pytest.raises(RuntimeError):
+        cache.lookup("query", vec(1, 0.05))
+    assert cache.stats.lookups == 1 and cache.stats.expired == 1
+    assert [e.query for e in cache.entries] == ["band"]        # stale entry removed anyway
+    assert cache.stats.strong_verifier_calls == 0              # the failed call is not counted

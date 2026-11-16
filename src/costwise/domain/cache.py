@@ -160,51 +160,54 @@ class SemanticCache:
         stale: list[CacheEntry] = []
         hit: CacheHit | None = None
         cost, strong_calls, examined = 0.0, 0, 0
-        for entry, sim, is_exact in snapshot:
-            if examined >= self.max_candidates:
+        try:
+            for entry, sim, is_exact in snapshot:
+                if examined >= self.max_candidates:
+                    break
+                reason = self._stale(entry, current_docs)
+                if reason:
+                    bump(reason)
+                    stale.append(entry)
+                    continue
+                examined += 1
+                if is_exact:
+                    bump("exact_hits")
+                    hit = CacheHit(entry, "exact", sim)
+                    break
+                if self.require_same_evidence and evidence_key != entry.evidence_key:
+                    bump("rejected_by_evidence")
+                    continue
+                if self.verifier and not self.verifier.same_question(query, entry.query):
+                    bump("rejected_by_verifier")
+                    continue
+                if sim >= self.threshold:
+                    bump("semantic_hits")
+                    hit = CacheHit(entry, "semantic", sim)
+                    break
+                # In the band: the strong verifier decides, once per lookup.
+                if strong_calls >= 1:
+                    continue
+                verdict = self._judge(query, entry.query)  # may raise: that call is not counted
+                strong_calls += 1
+                cost += verdict.cost_usd
+                if not verdict.same:
+                    bump("rejected_by_strong_verifier")
+                    continue
+                bump("verified_hits")
+                hit = CacheHit(entry, "verified", sim, verify_cost_usd=verdict.cost_usd)
                 break
-            reason = self._stale(entry, current_docs)
-            if reason:
-                bump(reason)
-                stale.append(entry)
-                continue
-            examined += 1
-            if is_exact:
-                bump("exact_hits")
-                hit = CacheHit(entry, "exact", sim)
-                break
-            if self.require_same_evidence and evidence_key != entry.evidence_key:
-                bump("rejected_by_evidence")
-                continue
-            if self.verifier and not self.verifier.same_question(query, entry.query):
-                bump("rejected_by_verifier")
-                continue
-            if sim >= self.threshold:
-                bump("semantic_hits")
-                hit = CacheHit(entry, "semantic", sim)
-                break
-            # In the band: the strong verifier decides, once per lookup.
-            if strong_calls >= 1:
-                continue
-            verdict = self._judge(query, entry.query)      # may raise (budget, provider): not counted
-            strong_calls += 1
-            cost += verdict.cost_usd
-            if not verdict.same:
-                bump("rejected_by_strong_verifier")
-                continue
-            bump("verified_hits")
-            hit = CacheHit(entry, "verified", sim, verify_cost_usd=verdict.cost_usd)
-            break
-
-        with self._lock:
-            for name, n in counts.items():
-                setattr(self.stats, name, getattr(self.stats, name) + n)
-            self.stats.strong_verifier_calls += strong_calls
-            self.stats.strong_verifier_cost_usd += cost
-            for entry in stale:
-                i = next((j for j, e in enumerate(self.entries) if e is entry), None)
-                if i is not None:
-                    self._remove(i)
+        finally:
+            # Runs even when the strong verifier raises (budget cap, provider error): the checks
+            # already made are counted and stale entries are still removed.
+            with self._lock:
+                for name, n in counts.items():
+                    setattr(self.stats, name, getattr(self.stats, name) + n)
+                self.stats.strong_verifier_calls += strong_calls
+                self.stats.strong_verifier_cost_usd += cost
+                for entry in stale:
+                    i = next((j for j, e in enumerate(self.entries) if e is entry), None)
+                    if i is not None:
+                        self._remove(i)
         return LookupResult(hit, cost, strong_calls)
 
     def put(self, entry: CacheEntry, qvec: np.ndarray) -> None:
