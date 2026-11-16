@@ -148,6 +148,14 @@ PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --seeds 2
 .venv/Scripts/python scripts/make_charts.py
 ```
 
+Load test: N concurrent `/ask` requests, reporting throughput and p50/p95. In-process with the
+mock model by default (no server, no download); `--url http://127.0.0.1:8000` hits a running
+server. With the mock model it measures the service's own overhead, not LLM latency.
+
+```bash
+PYTHONPATH=src .venv/Scripts/python scripts/load_test.py -n 200 -c 8
+```
+
 ```bash
 PYTHONPATH=src .venv/Scripts/python -m uvicorn costwise.app.api:app
 ```
