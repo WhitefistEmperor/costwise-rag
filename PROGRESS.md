@@ -143,17 +143,15 @@ README, charts, CI (green on GitHub Actions), `/metrics`, Docker (image built an
 with the hash embedder), load test; a self-review of every source, script and doc change since
 5d8ba30 found doc drift and two wording errors in the results (all fixed), no code defects. 182 tests pass, none touch the network.
 
-**Phases 0 to 5 are done. What remains (Phase 6) spends OpenRouter credit and needs Sahil's
-go-ahead.** Command for the paid run (reads the key from the environment, never prints it):
-`PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --live --max-cost 0.50 --seeds 1 --strong-verifier llm`
-`--strong-verifier llm` opens the cache band [0.60, 0.88) with the small-model YES/NO check;
-without it the run measures the guard-only cache. Estimate for one seed (70 queries x 5 configs,
-short answers, plus roughly one extra small-model call per two queries in the two cache configs):
-about $0.25 to $0.35; two seeds may touch the $0.50 cap, in which case the run stops and says so.
+**Phases 0 to 5 are done. Phase 6 (the paid live run) is not planned:** Sahil does not allow
+paid evals (16 Nov 2026), so live cost, latency and answer quality stay marked pending in the
+README. The harness still supports `--live` (hard `--max-cost` cap, key read only from the
+environment); it is documented, not run.
 
-## Next steps (in order)
-1. Phase 6 (needs go-ahead): paid live run, then fill the live table in README.md and the resume bullets.
-2. Later (optional): Quora Question Pairs cache benchmark.
+## Next steps
+1. Nothing required. Live numbers stay pending unless Sahil changes the no-paid-evals rule.
+2. Later (optional): Quora Question Pairs cache benchmark (needs a dataset download; not done
+   without a yes).
 
 ## Independent check of the fixes (15 Nov, at 1538b07)
 All 12 reviewed defects are fixed; 153 tests pass with no network access; every number above

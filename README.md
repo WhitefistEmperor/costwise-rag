@@ -108,11 +108,11 @@ cost and latency are **not real**; they only prove the harness runs end to end.
 | cache only | 124/140 | $0.1955 (mock) | large 84, cache 56 | 56 (2 wrong) |
 | full | 124/140 | $0.0502 (mock) | small 67, large 17, cache 56 | 56 (2 wrong) |
 
-### End to end, live (Phase 6: not run yet)
+### End to end, live (pending: not run)
 
 > **Placeholder.** Real cost per query, saving against always-large, p50/p95 latency and answer
-> accuracy per configuration will come from one paid run on OpenRouter with a hard budget cap
-> (`--max-cost 0.50`). No live number exists yet and none is claimed.
+> accuracy per configuration would need a paid run on OpenRouter (the harness supports one with a
+> hard `--max-cost` cap). That run has not been made, so no live number exists and none is claimed.
 
 | Config | Correct | Cost | Saving vs baseline | p50 / p95 latency |
 |---|---|---|---|---|
