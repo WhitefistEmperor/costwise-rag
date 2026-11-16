@@ -88,8 +88,9 @@ matters. The learned router fits all 75 tune rows, so it over-fits a little.
 
 ![Correct and wrong cache hits across accept thresholds, per verifier variant](docs/img/cache_thresholds.png)
 
-The guard is what makes low thresholds usable: at 0.60 it cuts wrong hits from 134 (threshold
-only) to 40 while keeping more correct hits; at the tuned 0.88 it leaves 5 wrong of 350.
+The checks are what make low thresholds usable: at 0.60, wrong hits fall from 134 (threshold
+only) to 63 with KeyTermGuard and to 40 with the guard plus the same-evidence check, while
+correct hits rise from 89 to 121; at the tuned 0.88 the guard plus evidence leaves 5 wrong of 350.
 
 ![Router accuracy against share sent to the large model](docs/img/router_tradeoff.png)
 

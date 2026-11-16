@@ -174,7 +174,8 @@ Anything in [brackets] needs the paid Phase 6 run and must not be used until it 
   a cost-aware small/large model router, cutting LLM cost by [X% vs always-large] and p95
   latency by [Y ms] at [same / within Z points of] answer accuracy on a [N]-query live A/B.
 - Designed a two-threshold semantic cache with a rule-based key-term verifier (numbers, units,
-  plan names) that cut wrong cache hits from 134 to 40 of 350 queries at similarity 0.60, and
+  plan names) plus a same-evidence check that together cut wrong cache hits from 134 to 40 of
+  350 queries at similarity 0.60 (the verifier alone: 134 to 63), and
   served 17/175 repeats with 5/350 wrong hits (1.4%) at the tune-chosen threshold; with a
   perfect strong verifier in the band, up to 134/175 repeats (offline upper bound).
 - Trained a logistic-regression router on 7 query and retrieval features from 75 labelled
