@@ -34,8 +34,8 @@
       "cost_per_query_usd": 0.002314,
       "llm_spent_usd": 0.3239,
       "always_large_cost_usd": 0.3239,
-      "latency_ms_p50": 15.1,
-      "latency_ms_p95": 19.5,
+      "latency_ms_p50": 15.0,
+      "latency_ms_p95": 19.1,
       "routes": {
         "large": 140
       },
@@ -47,7 +47,8 @@
       "abstained_final": 0,
       "strong_verifier_calls": 0,
       "stopped": null,
-      "error": null
+      "error": null,
+      "interrupted": false
     },
     "always_small": {
       "queries": 140,
@@ -57,8 +58,8 @@
       "cost_per_query_usd": 0.000116,
       "llm_spent_usd": 0.016195,
       "always_large_cost_usd": 0.3239,
-      "latency_ms_p50": 14.4,
-      "latency_ms_p95": 22.1,
+      "latency_ms_p50": 16.4,
+      "latency_ms_p95": 26.5,
       "routes": {
         "small": 140
       },
@@ -70,7 +71,8 @@
       "abstained_final": 0,
       "strong_verifier_calls": 0,
       "stopped": null,
-      "error": null
+      "error": null,
+      "interrupted": false
     },
     "router_only": {
       "queries": 140,
@@ -80,8 +82,8 @@
       "cost_per_query_usd": 0.000583,
       "llm_spent_usd": 0.081591,
       "always_large_cost_usd": 0.3239,
-      "latency_ms_p50": 14.4,
-      "latency_ms_p95": 17.3,
+      "latency_ms_p50": 17.3,
+      "latency_ms_p95": 24.8,
       "routes": {
         "small": 112,
         "large": 28
@@ -94,7 +96,8 @@
       "abstained_final": 0,
       "strong_verifier_calls": 0,
       "stopped": null,
-      "error": null
+      "error": null,
+      "interrupted": false
     },
     "cache_only": {
       "queries": 140,
@@ -104,8 +107,8 @@
       "cost_per_query_usd": 0.001396,
       "llm_spent_usd": 0.19546,
       "always_large_cost_usd": 0.322824,
-      "latency_ms_p50": 14.6,
-      "latency_ms_p95": 16.7,
+      "latency_ms_p50": 17.0,
+      "latency_ms_p95": 22.0,
       "routes": {
         "large": 84,
         "cache": 56
@@ -118,7 +121,8 @@
       "abstained_final": 0,
       "strong_verifier_calls": 0,
       "stopped": null,
-      "error": null
+      "error": null,
+      "interrupted": false
     },
     "full": {
       "queries": 140,
@@ -128,8 +132,8 @@
       "cost_per_query_usd": 0.000359,
       "llm_spent_usd": 0.050232,
       "always_large_cost_usd": 0.322824,
-      "latency_ms_p50": 15.3,
-      "latency_ms_p95": 19.2,
+      "latency_ms_p50": 17.2,
+      "latency_ms_p95": 51.2,
       "routes": {
         "small": 67,
         "large": 17,
@@ -143,10 +147,11 @@
       "abstained_final": 0,
       "strong_verifier_calls": 0,
       "stopped": null,
-      "error": null
+      "error": null,
+      "interrupted": false
     }
   },
-  "started": "2026-11-15 22:50:58",
+  "started": "2026-11-16 08:20:17",
   "total_spent_usd": 0.667378,
   "total_llm_calls": 588,
   "total_retries": 0

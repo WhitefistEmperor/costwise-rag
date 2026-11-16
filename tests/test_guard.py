@@ -31,7 +31,7 @@ def test_guard_normalises_equal_numbers(a, b):
 
 def test_guard_number_terms_are_exact():
     g = KeyTermGuard(set())
-    assert g.key_terms("3,000 and 1.30 and 800GB") == {"num:3000", "num:1.3", "num:800"}
+    assert g.key_terms("3,000 and 1.30 and 800GB") == {"num:3000", "num:1.3", "num:800", "unit:gb"}
     assert g.key_terms("1,234,567.50") == {"num:1234567.5"}
 
 
@@ -58,3 +58,27 @@ def test_line_and_bullet_initial_words_are_not_entity_terms():
 def test_chunk_text_keeps_line_breaks_inside_a_section():
     chunk = chunk_markdown("help.md", DOC, "h")[0]
     assert chunk.text.splitlines()[1] == "- Settings holds the account options."
+
+
+@pytest.mark.parametrize("a,b", [
+    ("cost to migrate 800GB", "cost to migrate 800MB"),
+    ("restore takes 6h", "restore takes 6 days"),
+    ("links expire after 30 days", "links expire after 30 minutes"),
+    ("upload limit of 2 TB", "upload limit of 2 gigabytes"),
+    ("90-day retention", "90-hour retention"),
+])
+def test_guard_rejects_a_unit_only_change(a, b):
+    assert not KeyTermGuard(set()).same_question(a, b)
+
+
+@pytest.mark.parametrize("a,b", [
+    ("cost to migrate 800GB", "cost to migrate 800 GB"),
+    ("restore takes 6h", "restore takes 6 hours"),
+    ("Team needs 90-day retention", "we need backups kept 90 days"),   # hyphen form counts as the unit
+    ("cost to migrate 800GB", "what does moving 800 of storage cost"),   # unit dropped: an addition
+    ("price of 2FA on Team", "team 2fa price"),
+    ("does the v2 API allow it", "is it allowed in the v2 API"),
+    ("billed monthly", "billed per month"),                             # no number: no unit term
+])
+def test_guard_units_follow_the_substitution_rule(a, b):
+    assert KeyTermGuard(set()).same_question(a, b)

@@ -127,7 +127,7 @@ about $0.25 to $0.35; two seeds may touch the $0.50 cap, in which case the run s
 
 ## Independent check of the fixes (15 Nov, at 1538b07)
 All 12 reviewed defects are fixed; 153 tests pass with no network access; every number above
-reproduces from a fresh run. Still open from that check, to fix next (each with a test):
+reproduces from a fresh run. All four were fixed on 16 Nov, each with a regression test:
 - FIXED (16 Nov): `--max-cost` must be a finite number >= 0; `inf`, `nan` and negatives are
   refused by the parser (exit 2, nothing run) and by `BudgetedLLM` itself.
 - FIXED (16 Nov): Ctrl+C during the live run keeps the partial counts of the current config,
@@ -135,7 +135,10 @@ reproduces from a fresh run. Still open from that check, to fix next (each with 
 - FIXED (16 Nov): when the strong verifier raises (budget cap, provider error),
   `SemanticCache.lookup` still records the checks it made and removes stale entries, then
   re-raises; the failed call is not counted.
-- `KeyTermGuard` treats a unit-only change as the same question ("800GB" vs "800MB").
+- FIXED (16 Nov): `KeyTermGuard` reads the unit written right after a number ("800GB",
+  "800 GB", "90-day", "6 hours") as a key term under the substitution rule, so "800GB" vs
+  "800MB" conflict and "800GB" vs "800 GB" do not. Offline eval rerun: data/tuned.json and
+  results/offline.json unchanged; mock live counts unchanged.
 
 ## Open issues
 - Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock

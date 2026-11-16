@@ -16,7 +16,10 @@ Key terms are:
      middle of a sentence (plan names, regions, products, acronyms);
   2. numbers in the question;
   3. a small configured list of contrast words that are not capitalised in the corpus
-     (CONTRAST_GROUPS below). This list is hand-written domain config, not learned.
+     (CONTRAST_GROUPS below). This list is hand-written domain config, not learned;
+  4. the unit written right after a number, glued, spaced or hyphenated ("800GB", "800 GB", "90-day"), mapped
+     to a canonical unit (UNITS below). Units follow the substitution rule, so "800GB" vs
+     "800MB" conflict while "800GB" vs "800 GB" and "800GB" vs "800 of storage" do not.
 """
 from __future__ import annotations
 
@@ -50,6 +53,23 @@ CONTRAST_GROUPS: list[dict[str, str]] = [
 ]
 _CONTRAST = {word: label for group in CONTRAST_GROUPS for word, label in group.items()}
 
+# Unit word -> canonical unit. Only counted directly after a number.
+UNITS: dict[str, str] = {
+    **{w: "kb" for w in ("kb", "kilobyte", "kilobytes")},
+    **{w: "mb" for w in ("mb", "megabyte", "megabytes")},
+    **{w: "gb" for w in ("gb", "gigabyte", "gigabytes")},
+    **{w: "tb" for w in ("tb", "terabyte", "terabytes")},
+    **{w: "ms" for w in ("ms", "millisecond", "milliseconds")},
+    **{w: "s" for w in ("s", "sec", "secs", "second", "seconds")},
+    **{w: "min" for w in ("min", "mins", "minute", "minutes")},
+    **{w: "h" for w in ("h", "hr", "hrs", "hour", "hours")},
+    **{w: "day" for w in ("d", "day", "days")},
+    **{w: "week" for w in ("wk", "wks", "week", "weeks")},
+    **{w: "month" for w in ("mo", "month", "months")},
+    **{w: "year" for w in ("yr", "yrs", "year", "years")},
+}
+_NUMBER_UNIT = re.compile(rf"(?:{_NUMBER.pattern})[\s-]?([a-z]+)")
+
 
 def extract_entity_terms(chunks: Iterable[Chunk]) -> set[str]:
     """Lower-cased words that appear with a capital letter away from the start of a sentence.
@@ -79,6 +99,7 @@ class KeyTermGuard:
     def key_terms(self, question: str) -> set[str]:
         q = question.lower()
         out: set[str] = {f"num:{number_key(m.group())}" for m in _NUMBER.finditer(q)}
+        out |= {f"unit:{UNITS[m.group(1)]}" for m in _NUMBER_UNIT.finditer(q) if m.group(1) in UNITS}
         for token in _TOKEN.findall(q):
             if token[0].isdigit():
                 continue                                # numbers are handled above
