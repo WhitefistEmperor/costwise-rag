@@ -153,7 +153,9 @@ PYTHONPATH=src .venv/Scripts/python -m uvicorn costwise.app.api:app
 ```
 
 Then open http://127.0.0.1:8000/ for the dashboard, or `POST /ask` with `{"query": "..."}`.
-`GET /stats`, `/recent` and `/cache` return JSON. The API uses the mock model unless
+`GET /stats`, `/recent` and `/cache` return JSON; `GET /metrics` serves Prometheus text format
+(request counts by route, LLM and baseline cost, escalations, latency p50/p95, cache hits and
+rejections). With the mock model, `costwise_info{mock="true"}` marks the cost metrics as not real. The API uses the mock model unless
 `COSTWISE_LLM=openrouter` and `OPENROUTER_API_KEY` are set in the environment.
 
 The paid live eval (`--live`) spends OpenRouter credit and stops at a hard cap; see

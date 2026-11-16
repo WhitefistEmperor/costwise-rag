@@ -123,7 +123,7 @@ about $0.25 to $0.35; two seeds may touch the $0.50 cap, in which case the run s
 
 ## Next steps (in order)
 1. Phase 6 (needs go-ahead): paid live run, then fill the live table in README.md and the resume bullets.
-2. Later (optional): Quora Question Pairs cache benchmark, Prometheus endpoint, Dockerfile.
+2. Later (optional): Quora Question Pairs cache benchmark.
 
 ## Independent check of the fixes (15 Nov, at 1538b07)
 All 12 reviewed defects are fixed; 153 tests pass with no network access; every number above
@@ -149,6 +149,10 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
 - **CI (16 Nov):** `.github/workflows/ci.yml` runs the suite on every push and pull request
   (Python 3.11 and 3.12, CPU-only torch, `HF_HUB_OFFLINE=1`, mock model; no model download, no
   network in tests, no secret).
+- **/metrics (16 Nov):** `app/metrics.py` writes Prometheus text format 0.0.4 by hand (no new
+  dependency): requests by route, LLM and always-large cost, escalations, latency p50/p95 summary,
+  cache entries, lookups, hits by tier, rejections by reason, strong-verifier calls and cost.
+  `costwise_info{mock="true"}` marks mock cost as not real. Tests parse every exposition line.
 
 ## Open issues
 - Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock

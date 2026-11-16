@@ -53,7 +53,8 @@ src/costwise/
     storage.py     SQLite cache store and request log
   app/           entry points
     container.py   builds a Pipeline from Settings
-    api.py         FastAPI: /ask, /stats, /recent, dashboard
+    api.py         FastAPI: /ask, /stats, /metrics, /recent, /cache, dashboard
+    metrics.py     Prometheus text exposition for /metrics
     dashboard.html
   eval/          the numbers
     dataset.py     questions, splits, query stream
@@ -163,7 +164,7 @@ about, and the corpus is small.
 | LLM access | Thin `httpx` client for OpenRouter | LiteLLM, provider SDKs | One key reaches small and large models and returns real cost per call; no heavy dependency |
 | Embeddings | `all-MiniLM-L6-v2`, local | API embeddings | Free, fast on CPU, already on this machine |
 | Models | small `anthropic/claude-haiku-5.5` ($0.10 / $0.50 per M tokens), large `anthropic/claude-sonnet-5.5` ($2 / $10) | any pair | 20x price gap makes routing matter; both are config values |
-| Metrics | SQLite log + one dashboard page + JSON `/stats` | Prometheus + Grafana, Langfuse | No extra services to run; a Prometheus endpoint is a possible later add-on |
+| Metrics | SQLite log + one dashboard page + JSON `/stats` + Prometheus text at `/metrics` (hand-written, no client library) | prometheus_client, Grafana, Langfuse | No extra services to run; any Prometheus can scrape `/metrics` |
 
 ## 4. How it is evaluated
 
