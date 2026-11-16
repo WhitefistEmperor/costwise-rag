@@ -74,7 +74,7 @@ The upper-bound rows assume a strong verifier that is never wrong; they bound wh
 verifier can reach. The last row was added after the 5 wrong test hits were seen and is reported
 only; the tuned config does not use it.
 
-**Router, test split, 105 questions (21 hand-labelled hard, 84 easy):**
+**Router, test split, 105 query texts (35 questions x 3 phrasings; 21 texts hand-labelled hard, 84 easy):**
 
 | Router (threshold from tune) | Accuracy | Hard sent to large | Easy kept on small | Sent to large |
 |---|---|---|---|---|

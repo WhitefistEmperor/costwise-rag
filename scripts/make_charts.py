@@ -60,9 +60,9 @@ def router_chart(data: dict, out: Path) -> None:
         hard = chosen["hard"] / chosen["queries"]
     ax.axvline(hard, color="grey", ls=":", lw=1)
     ax.text(hard, 0.02, " share labelled hard", color="grey", fontsize=8, transform=ax.get_xaxis_transform())
-    ax.set_xlabel("share of test questions sent to the large model")
+    ax.set_xlabel("share of test query texts sent to the large model")
     ax.set_ylabel("routing accuracy vs hand labels")
-    ax.set_title("Router trade-off across thresholds (test split, 105 questions)", fontsize=10)
+    ax.set_title("Router trade-off across thresholds (test split, 105 query texts)", fontsize=10)
     ax.grid(alpha=0.3)
     ax.legend(fontsize=8)
     fig.tight_layout()

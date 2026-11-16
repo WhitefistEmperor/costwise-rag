@@ -179,10 +179,10 @@ Anything in [brackets] needs the paid Phase 6 run and must not be used until it 
   served 17/175 repeats with 5/350 wrong hits (1.4%) at the tune-chosen threshold; with a
   perfect strong verifier in the band, up to 134/175 repeats (offline upper bound).
 - Trained a logistic-regression router on 7 query and retrieval features from 75 labelled
-  rows: 92.4% routing accuracy (97/105) on held-out questions, sending 18 of 21 hard questions
+  rows: 92.4% routing accuracy (97/105) on held-out query texts, sending 18 of 21 hard texts
   to the large model while sending only 23/105 there in total.
 - Hybrid retrieval with reciprocal rank fusion: recall@4 of 98.1% (103/105) vs 97.1% dense and
-  93.3% BM25 on held-out questions.
+  93.3% BM25 on 105 held-out query texts.
 - Engineered for honest evaluation: tune/test split for every threshold and weight, hard
   budget cap checked before every paid call, mock runs labelled not real, Prometheus /metrics,
   Docker, and CI running 182 offline tests on every push.
