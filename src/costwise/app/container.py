@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 
 from ..adapters.embedders import HashEmbedder, SentenceTransformerEmbedder
-from ..adapters.llm import MockLLM, OpenRouterLLM
+from ..adapters.llm import MockLLM, OpenRouterLLM, ZaiLLM
 from ..adapters.retrieval import build_retrievers
 from ..adapters.storage import SQLiteCacheStore, SQLiteRequestLog
 from ..adapters.verifiers import KeyTermGuard, LLMVerifier
@@ -39,9 +39,14 @@ def build_llm(settings: Settings) -> LLMClient:
         if not key:
             raise RuntimeError("COSTWISE_LLM=openrouter but OPENROUTER_API_KEY is not set in the environment")
         return OpenRouterLLM(key, settings.openrouter_base_url)
+    if settings.llm_provider == "zai":
+        key = os.environ.get("ZAI_API_KEY", "")
+        if not key:
+            raise RuntimeError("COSTWISE_LLM=zai but ZAI_API_KEY is not set in the environment")
+        return ZaiLLM(key, settings.zai_base_url)
     if settings.llm_provider == "mock":
         return MockLLM()
-    raise ValueError(f"unknown llm provider {settings.llm_provider!r} (mock | openrouter)")
+    raise ValueError(f"unknown llm provider {settings.llm_provider!r} (mock | openrouter | zai)")
 
 
 def build_router(settings: Settings, tuned: dict) -> Router | None:

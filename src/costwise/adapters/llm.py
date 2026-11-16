@@ -124,6 +124,78 @@ class OpenRouterLLM:
         self._client.close()
 
 
+class ZaiLLM:
+    """OpenAI-compatible client for Z.ai (GLM Flash, free tier).
+
+    Uses the standard OpenAI chat-completions format; `base_url` defaults to
+    `https://api.z.ai/api/paas/v4` (set COSTWISE_ZAI_BASE_URL to override for
+    the China platform: `https://open.bigmodel.cn/api/paas/v4`).
+    The API key is read from `ZAI_API_KEY` by the caller and passed in; it is
+    never printed or logged here.
+
+    Cost is always 0.0 (free tier); prompt_tokens and completion_tokens come
+    from the standard OpenAI usage object in the response.
+    """
+
+    name = "zai"
+
+    def __init__(self, api_key: str, base_url: str = "https://api.z.ai/api/paas/v4",
+                 timeout_s: float = 60.0, transport: httpx.BaseTransport | None = None,
+                 max_retries: int = 2, backoff_s: float = 2.0,
+                 sleep: Callable[[float], None] = time.sleep):
+        if not api_key:
+            raise ValueError("ZaiLLM needs an API key (set ZAI_API_KEY in the environment)")
+        self.max_retries, self.backoff_s, self._sleep = max_retries, backoff_s, sleep
+        self.before_retry: Callable[[str, str, str, int], None] | None = None
+        self._client = httpx.Client(base_url=base_url, timeout=timeout_s, transport=transport,
+                                    headers={"Authorization": f"Bearer {api_key}"})
+
+    def _post(self, body: dict, model: str) -> httpx.Response:
+        try:
+            r = self._client.post("/chat/completions", json=body)
+        except httpx.TimeoutException as e:
+            raise _Retryable(f"timeout calling Z.ai for {model} ({type(e).__name__})") from None
+        except httpx.TransportError as e:
+            raise _Retryable(f"network error calling Z.ai for {model} ({type(e).__name__})") from None
+        if r.status_code == 429 or r.status_code >= 500:
+            raise _Retryable(f"HTTP {r.status_code} from Z.ai for {model}")
+        if r.status_code >= 400:
+            raise ProviderError(f"HTTP {r.status_code} from Z.ai for {model}: {_error_message(r)}")
+        return r
+
+    def complete(self, model: str, system: str, user: str, max_tokens: int) -> LLMResult:
+        body = {"model": model, "max_tokens": max_tokens, "temperature": 0,
+                "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
+        attempt = 0
+        while True:
+            t0 = time.perf_counter()
+            try:
+                r = self._post(body, model)
+                break
+            except _Retryable as e:
+                if attempt >= self.max_retries:
+                    raise ProviderError(f"{e} after {attempt + 1} attempts") from None
+                self._sleep(self.backoff_s * 2 ** attempt)
+                attempt += 1
+                if self.before_retry is not None:
+                    self.before_retry(model, system, user, max_tokens)
+        latency = (time.perf_counter() - t0) * 1000
+        try:
+            data = r.json()
+        except ValueError:
+            raise ProviderError(f"Z.ai returned a non-JSON body for {model}") from None
+        choices = data.get("choices") if isinstance(data, dict) else None
+        if not choices:
+            raise ProviderError(f"Z.ai response for {model} has no choices: {_error_message(r)}")
+        usage = data.get("usage") or {}
+        p, c = int(usage.get("prompt_tokens", 0)), int(usage.get("completion_tokens", 0))
+        text = ((choices[0].get("message") or {}).get("content") or "").strip()
+        return LLMResult(text, data.get("model", model), p, c, 0.0, latency)
+
+    def close(self) -> None:
+        self._client.close()
+
+
 class _Retryable(Exception):
     pass
 

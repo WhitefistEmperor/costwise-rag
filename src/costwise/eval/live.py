@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from typing import Sequence
 
 from ..adapters.corpus import load_corpus
-from ..adapters.llm import MockLLM, ProviderError
+from ..adapters.llm import MockLLM, ProviderError, ZaiLLM
 from ..adapters.retrieval import build_retrievers
 from ..adapters.storage import SQLiteRequestLog
 from ..app.container import build_cache, build_embedder, build_llm, build_router, route_threshold_for
@@ -202,8 +202,8 @@ def check_prices(models: Sequence[str], prices: dict[str, tuple[float, float]] |
 def run(settings: Settings, llm: LLMClient, mock: bool, max_cost_usd: float | None, split: str = "test",
         repeat_rate: float = 0.5, seeds: Sequence[int] = (0, 1), configs: Sequence[str] = tuple(CONFIGS),
         embedder=None, strong_verifier: str = "none",
-        prices: dict[str, tuple[float, float]] | None = None) -> dict:
-    if not mock:
+        prices: dict[str, tuple[float, float]] | None = None, skip_price_check: bool = False) -> dict:
+    if not mock and not skip_price_check:
         check_prices([settings.small_model, settings.large_model], prices)
     settings.cache_strong_verifier = strong_verifier          # "none" | "llm": opens the cache band
     tuned = settings.load_tuned()
@@ -280,6 +280,7 @@ def parse_max_cost(text: str) -> float:
 def main(argv: Sequence[str] | None = None) -> dict:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--live", action="store_true", help="spend OpenRouter credit (default: mock dry run)")
+    ap.add_argument("--zai", action="store_true", help="run live with Z.ai free GLM Flash (needs ZAI_API_KEY)")
     ap.add_argument("--max-cost", type=parse_max_cost, default=None,
                     help="hard cap in USD (default 0.50 for --live; no cap for the mock dry run)")
     ap.add_argument("--seeds", type=int, default=2, help="number of stream seeds run back to back")
@@ -291,8 +292,12 @@ def main(argv: Sequence[str] | None = None) -> dict:
                     help="MODEL=IN,OUT price override in USD per million tokens (for models not in the table)")
     ap.add_argument("--out", default=None, help="output JSON (default results/live.json or results/live_mock.json)")
     args = ap.parse_args(argv)
+    if args.live and args.zai:
+        raise SystemExit("--live and --zai are mutually exclusive")
     settings = Settings()
     prices = dict(args.price)
+    skip_price_check = False
+    is_live = args.live or args.zai
     if args.live:
         settings.llm_provider = "openrouter"
         check_prices([settings.small_model, settings.large_model], prices)
@@ -300,13 +305,20 @@ def main(argv: Sequence[str] | None = None) -> dict:
             llm: LLMClient = build_llm(settings)       # the only place that reads OPENROUTER_API_KEY
         except RuntimeError as e:
             raise SystemExit(f"--live: {e}")
+    elif args.zai:
+        settings.llm_provider = "zai"
+        skip_price_check = True
+        try:
+            llm = build_llm(settings)
+        except RuntimeError as e:
+            raise SystemExit(f"--zai: {e}")
     else:
         llm = MockLLM()
     max_cost = args.max_cost if args.max_cost is not None else (0.50 if args.live else None)
-    result = run(settings, llm, mock=not args.live, max_cost_usd=max_cost, repeat_rate=args.repeat_rate,
+    result = run(settings, llm, mock=not is_live, max_cost_usd=max_cost, repeat_rate=args.repeat_rate,
                  seeds=range(args.seeds), configs=args.configs, strong_verifier=args.strong_verifier,
-                 prices=prices)
-    out = ROOT / "results" / (args.out or ("live.json" if args.live else "live_mock.json"))
+                 prices=prices, skip_price_check=skip_price_check)
+    out = ROOT / "results" / (args.out or ("live.json" if is_live else "live_mock.json"))
     out.parent.mkdir(exist_ok=True)
     out.write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "configs"}, indent=2))
