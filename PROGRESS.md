@@ -6,6 +6,9 @@ Updated at every phase boundary. Plan: [docs/PLAN.md](docs/PLAN.md). Design: [do
 phase or sub-step, not one big commit, and push each one: `git push origin main`.
 Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
 
+**Rule from Sahil (16 Nov 2026): no paid evals.** Never run `costwise.eval.live --live` or spend
+OpenRouter credit. Live cost and latency stay unmeasured; only offline and mock runs.
+
 ## Done
 - **Phase 0:** design doc, plan, 12-document synthetic corpus (39 chunks), 60 questions
   (46 easy, 14 hard; 25 tune, 35 test; 2 paraphrases each) built by `scripts/make_questions.py`.
@@ -169,11 +172,12 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
 
 ## Resume bullets (DRAFT, 16 Nov)
 Offline numbers are real (results/offline.json, synthetic 12-document corpus, test split).
-Anything in [brackets] needs the paid Phase 6 run and must not be used until it exists.
+Sahil does not allow paid eval runs (16 Nov 2026), so Phase 6 is not planned and these bullets
+use offline numbers only; none claims a measured cost or latency saving.
 
-- Built a RAG service (FastAPI, hybrid BM25 + dense retrieval, SQLite) with a semantic cache and
-  a cost-aware small/large model router, cutting LLM cost by [X% vs always-large] and p95
-  latency by [Y ms] at [same / within Z points of] answer accuracy on a [N]-query live A/B.
+- Built a RAG service (FastAPI, hybrid BM25 + dense retrieval, SQLite) with a verified semantic
+  cache and a cost-aware small/large model router, with per-request cost tracking, a dashboard
+  and an eval harness that A/B-tests five configurations under a hard budget cap.
 - Designed a two-threshold semantic cache with a rule-based key-term verifier (numbers, units,
   plan names) plus a same-evidence check that together cut wrong cache hits from 134 to 40 of
   350 queries at similarity 0.60 (the verifier alone: 134 to 63), and
