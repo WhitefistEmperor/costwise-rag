@@ -122,7 +122,7 @@ short answers, plus roughly one extra small-model call per two queries in the tw
 about $0.25 to $0.35; two seeds may touch the $0.50 cap, in which case the run stops and says so.
 
 ## Next steps (in order)
-1. Phase 6 (needs go-ahead): paid live run, then README with the real numbers and resume bullets.
+1. Phase 6 (needs go-ahead): paid live run, then fill the live table in README.md and the resume bullets.
 2. Later (optional): Quora Question Pairs cache benchmark, Prometheus endpoint, Dockerfile.
 
 ## Independent check of the fixes (15 Nov, at 1538b07)
@@ -139,6 +139,10 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
   "800 GB", "90-day", "6 hours") as a key term under the substitution rule, so "800GB" vs
   "800MB" conflict and "800GB" vs "800 GB" do not. Offline eval rerun: data/tuned.json and
   results/offline.json unchanged; mock live counts unchanged.
+
+- **README.md (16 Nov):** portfolio README with a Mermaid diagram, design decisions and
+  alternatives, offline numbers from results/offline.json, mock numbers labelled not real, and
+  a placeholder table for the Phase 6 live numbers.
 
 ## Open issues
 - Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock
