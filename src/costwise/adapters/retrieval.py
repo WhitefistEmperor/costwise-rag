@@ -37,28 +37,37 @@ class DenseIndex:
 
 
 class BM25Index:
-    """Okapi BM25."""
+    """Okapi BM25 over an inverted index: a query touches only the postings of its own terms,
+    so scoring cost grows with matching documents, not corpus size."""
 
     def __init__(self, chunks: Sequence[Chunk], dense: DenseIndex | None = None, k1: float = 1.5, b: float = 0.75):
         self.chunks, self.dense, self.k1, self.b = list(chunks), dense, k1, b
         self.tf = [Counter(tokenize(c.text)) for c in self.chunks]
         self.lengths = np.array([sum(tf.values()) for tf in self.tf], dtype=np.float32)
-        self.avg_len = float(self.lengths.mean())
+        self.avg_len = float(self.lengths.mean()) if len(self.chunks) else 0.0
         n = len(self.chunks)
         df = Counter(term for tf in self.tf for term in tf)
         self.idf = {t: math.log(1 + (n - d + 0.5) / (d + 0.5)) for t, d in df.items()}
+        rows: dict[str, tuple[list[int], list[int]]] = {}
+        for i, tf in enumerate(self.tf):
+            for term, f in tf.items():
+                ids, fs = rows.setdefault(term, ([], []))
+                ids.append(i)
+                fs.append(f)
+        # Per term: document ids and term frequencies, plus the length norm of each posting.
+        self.postings = {t: (np.array(ids, dtype=np.int64), np.array(fs, dtype=np.float32))
+                         for t, (ids, fs) in rows.items()}
+        self._norm = (self.k1 * (1 - self.b + self.b * self.lengths / self.avg_len)).astype(np.float32) \
+            if n else np.zeros(0, dtype=np.float32)
 
     def scores(self, query: str) -> np.ndarray:
         out = np.zeros(len(self.chunks), dtype=np.float32)
         for term in set(tokenize(query)):
-            idf = self.idf.get(term)
-            if idf is None:
+            posting = self.postings.get(term)
+            if posting is None:
                 continue
-            for i, tf in enumerate(self.tf):
-                f = tf.get(term, 0)
-                if f:
-                    norm = self.k1 * (1 - self.b + self.b * self.lengths[i] / self.avg_len)
-                    out[i] += idf * f * (self.k1 + 1) / (f + norm)
+            ids, f = posting
+            out[ids] += self.idf[term] * f * (self.k1 + 1) / (f + self._norm[ids])
         return out
 
     def search(self, query: str, qvec: np.ndarray, k: int) -> list[Hit]:
