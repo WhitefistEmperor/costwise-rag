@@ -71,19 +71,31 @@ UNITS: dict[str, str] = {
 _NUMBER_UNIT = re.compile(rf"(?:{_NUMBER.pattern})[\s-]?([a-z]+)")
 
 
-def extract_entity_terms(chunks: Iterable[Chunk]) -> set[str]:
+def extract_entity_terms(chunks: Iterable[Chunk], min_cap_ratio: float = 0.0) -> set[str]:
     """Lower-cased words that appear with a capital letter away from the start of a sentence.
     Each source line (chunk text keeps the document's line breaks) and each list item starts a
-    sentence, so the first word of a bullet is not mistaken for a mid-sentence capital."""
-    terms: set[str] = set()
+    sentence, so the first word of a bullet is not mistaken for a mid-sentence capital.
+
+    `min_cap_ratio` > 0 keeps only words capitalised in at least that share of their mid-sentence
+    occurrences, and drops the pronoun "I". The default (0) is the closed-corpus rule the service
+    uses; open-domain text (Title Case questions, "I") needs the ratio, or ordinary words become
+    key terms."""
+    capital: dict[str, int] = {}
+    seen: dict[str, int] = {}
     for chunk in chunks:
         body = chunk.text.split("\n", 1)[-1]          # drop the "Title - Heading" line
         for line in body.splitlines():
             for sentence in _SENTENCE.split(_LIST_MARK.sub("", line)):
                 for token in _TOKEN.findall(sentence)[1:]:
-                    if any(c.isupper() for c in token) and not token[0].isdigit():
-                        terms.add(token.lower())
-    return terms
+                    if token[0].isdigit():
+                        continue
+                    word = token.lower()
+                    seen[word] = seen.get(word, 0) + 1
+                    if any(c.isupper() for c in token):
+                        capital[word] = capital.get(word, 0) + 1
+    if min_cap_ratio <= 0:
+        return set(capital)
+    return {w for w, n in capital.items() if w != "i" and n / seen[w] >= min_cap_ratio}
 
 
 class KeyTermGuard:

@@ -86,8 +86,10 @@ def build_strong_verifier(settings: Settings, tuned: dict, llm: LLMClient):
     if kind == "llm":
         return LLMVerifier(llm, settings.small_model)
     if kind == "cross_encoder":
-        return CrossEncoderVerifier(tuned.get("cross_encoder_model", "cross-encoder/quora-distilroberta-base"),
-                                    tuned.get("cross_encoder_threshold", 0.5))
+        model = tuned.get("cross_encoder_model", "cross-encoder/quora-distilroberta-base")
+        if model.startswith(".state/"):                 # a locally fine-tuned verifier, relative to the repo
+            model = str(settings.state_dir / model.removeprefix(".state/"))
+        return CrossEncoderVerifier(model, tuned.get("cross_encoder_threshold", 0.5))
     raise ValueError(f"unknown strong verifier {kind!r} (none | llm | cross_encoder)")
 
 

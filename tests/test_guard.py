@@ -82,3 +82,17 @@ def test_guard_rejects_a_unit_only_change(a, b):
 ])
 def test_guard_units_follow_the_substitution_rule(a, b):
     assert KeyTermGuard(set()).same_question(a, b)
+
+
+def test_cap_ratio_keeps_mostly_capitalised_words_and_drops_i():
+    from costwise.adapters.verifiers import extract_entity_terms
+    from costwise.domain.models import Chunk
+
+    text = "t\nWhat Is the best way to learn Python?\nhow is python used. Is Python hard for I and me?\nwhere is Paris in winter"
+    chunks = [Chunk("c", "d", "", text)]
+    closed = extract_entity_terms(chunks)                      # the service's rule: any mid-sentence capital
+    assert {"is", "python", "i"} <= closed
+    open_rule = extract_entity_terms(chunks, 0.6)
+    assert "python" in open_rule                               # capitalised in 2 of 3 mid-sentence uses
+    assert "is" not in open_rule and "i" not in open_rule      # "is": capitalised 1 of 3 times
+    assert "paris" in open_rule                                # capitalised every time it appears mid-sentence

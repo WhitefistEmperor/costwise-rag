@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from pathlib import Path
 from typing import Sequence
 
 import numpy as np
@@ -111,13 +112,14 @@ def run(settings: Settings | None = None, models: Sequence[str] = MODELS, seeds:
                    "data/tuned.json (also fitted on tune). Counts are totals over all stream seeds.",
            "accept_threshold": accept, "candidate_threshold": candidate, "stream_seeds": len(streams),
            "repeat_rate": repeat_rate, "scored_pairs": len(to_score), "models": {}}
-    for name in models:
+    for model in models:
+        name = f"fine-tuned/{Path(model).name}" if Path(model).exists() else model
         t0 = time.perf_counter()
-        scores = score_pairs(name, to_score)
+        scores = score_pairs(model, to_score)
         scoring_s = time.perf_counter() - t0
         lookup = lambda pairs: [scores[p] for p in pairs]
         res: dict = {"batch_scoring_s": round(scoring_s, 1),
-                     "single_pair_latency": time_single_pair(name, to_score)}
+                     "single_pair_latency": time_single_pair(model, to_score)}
         # Three ways to use it; each gets its own score threshold, fitted on tune.
         setups = {
             "band": (accept, guard, True),                  # deployed design: guard + evidence, band below accept
@@ -127,7 +129,7 @@ def run(settings: Settings | None = None, models: Sequence[str] = MODELS, seeds:
         for setup, (acc, cheap, same_ev) in setups.items():
             tev, sev = (tune_ev, test_ev) if same_ev else (None, None)
             t = tune_score_threshold(candidate_pairs(tune_pairs, cheap, tev, candidate, acc), scores)
-            strong = CrossEncoderVerifier(name, t, scorer=lookup)
+            strong = CrossEncoderVerifier(model, t, scorer=lookup)
             res[setup] = {
                 "accept_threshold": acc, "score_threshold_from_tune": t,
                 "tune_band_pairs": confusion(candidate_pairs(tune_pairs, cheap, tev, candidate, acc), scores, t),
@@ -140,12 +142,15 @@ def run(settings: Settings | None = None, models: Sequence[str] = MODELS, seeds:
 
 def main(argv: Sequence[str] | None = None) -> dict:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--models", nargs="*", default=MODELS)
+    ap.add_argument("--models", nargs="*", default=None,
+                    help="default: the two public cross-encoders, plus the fine-tuned verifier if trained")
     ap.add_argument("--write-tuned", action="store_true",
                     help="store the best band model and its threshold in data/tuned.json for the app")
     args = ap.parse_args(argv)
     settings = Settings()
-    result = run(settings, args.models)
+    tuned_model = settings.state_dir / "models" / "verifier-minilm-paws-qqp"
+    models = args.models or (MODELS + ([str(tuned_model)] if tuned_model.exists() else []))
+    result = run(settings, models)
     path = ROOT / "results" / "verifier.json"
     path.write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
     for name, r in result["models"].items():
@@ -159,7 +164,7 @@ def main(argv: Sequence[str] | None = None) -> dict:
         # Pick on TUNE: most true accepts in the band with no false accept on tune.
         best = max(result["models"], key=lambda m: result["models"][m]["band"]["tune_band_pairs"]["true_accepts"])
         tuned = settings.load_tuned()
-        tuned["cross_encoder_model"] = best
+        tuned["cross_encoder_model"] = (".state/models/" + best.split("/", 1)[1]) if best.startswith("fine-tuned/") else best
         tuned["cross_encoder_threshold"] = result["models"][best]["band"]["score_threshold_from_tune"]
         settings.tuned_path.write_text(json.dumps(tuned, indent=2), encoding="utf-8")
         print(f"tuned.json: cross_encoder_model={best}")
