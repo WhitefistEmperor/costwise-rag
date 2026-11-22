@@ -43,7 +43,7 @@ REPO, REVISION, FILE = "routellm/gpt4_dataset", "7ef62d690ff71ce9c21f4226cfc7bbc
 PRICES = {"large": ("gpt-4-1106-preview", 10.0, 30.0), "small": ("mixtral-8x7b-instruct", 0.6, 0.6)}
 TEXT_FEATURES = [0, 1, 2, 3]          # words, numbers, cues, clauses (see domain/routing.py)
 FRACTIONS = np.linspace(0.0, 1.0, 101)
-C_GRID = [0.01, 0.1, 1.0, 10.0]
+C_GRID = [0.0003, 0.001, 0.003, 0.01, 0.1, 1.0, 10.0]
 
 
 def load_rows() -> list[dict]:
@@ -182,6 +182,9 @@ def run(settings: Settings | None = None, seed: int = 0, bootstrap: int = 300) -
         }
     rf95 = next(float(f) for f, v in zip(FRACTIONS, random_curve) if v >= 0.95 * strong - 1e-12)
     out["random"]["large_share_for_95pct_quality"] = rf95
+    random_cost = rf95 * cost_large + (1 - rf95) * cost_small          # expected cost of random routing
+    out["random"]["simulated_cost_for_95pct_quality"] = round(random_cost, 4)
+    out["random"]["simulated_saving_vs_always_large"] = round(1 - random_cost / cost_large, 4)
     out["random"]["curve"] = [round(float(v), 4) for v in random_curve[::5]]
     out["curve_fractions"] = [round(float(f), 2) for f in FRACTIONS[::5]]
     return out

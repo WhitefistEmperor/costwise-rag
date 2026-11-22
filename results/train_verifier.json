@@ -1,0 +1,14 @@
+{
+  "base": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+  "pairs": 24000,
+  "duplicates": 9962,
+  "epochs": 2,
+  "batch_size": 32,
+  "lr": 5e-05,
+  "max_length": 128,
+  "steps": 1500,
+  "train_seconds": 2565.0,
+  "loss_first_50": 2.264,
+  "loss_last_50": 0.3673,
+  "saved_to": ".state\\models\\verifier-minilm-paws-qqp"
+}

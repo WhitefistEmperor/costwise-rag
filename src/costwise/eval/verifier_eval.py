@@ -162,9 +162,11 @@ def main(argv: Sequence[str] | None = None) -> dict:
         print(f"{'':42} single-pair latency {r['single_pair_latency']}")
     if args.write_tuned:
         # Pick on TUNE: most true accepts in the band with no false accept on tune.
-        best = max(result["models"], key=lambda m: result["models"][m]["band"]["tune_band_pairs"]["true_accepts"])
+        # Hub models only: a locally fine-tuned model is not in a fresh clone or the Docker image.
+        hub = [m for m in result["models"] if not m.startswith("fine-tuned/")]
+        best = max(hub, key=lambda m: result["models"][m]["band"]["tune_band_pairs"]["true_accepts"])
         tuned = settings.load_tuned()
-        tuned["cross_encoder_model"] = (".state/models/" + best.split("/", 1)[1]) if best.startswith("fine-tuned/") else best
+        tuned["cross_encoder_model"] = best
         tuned["cross_encoder_threshold"] = result["models"][best]["band"]["score_threshold_from_tune"]
         settings.tuned_path.write_text(json.dumps(tuned, indent=2), encoding="utf-8")
         print(f"tuned.json: cross_encoder_model={best}")

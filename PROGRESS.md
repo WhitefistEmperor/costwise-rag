@@ -10,6 +10,33 @@ Remote: private GitHub repo `costwise-rag` (origin). Never force-push.
 He approved one capped run on 16 Nov (done, see Phase 6 below). Scheduled tasks and subagents
 must never run `costwise.eval.live --live`.
 
+**Approval from Sahil (22 Nov 2026, in chat): download the free public benchmark files and models**
+(cross-encoders quora/stsb/ms-marco, BEIR SciFact and NFCorpus, GLUE QQP, PAWS, RouteLLM
+gpt4_dataset valid.jsonl) into the HF cache. No paid run was approved; none was made.
+
+## Public benchmarks (22 Nov 2026)
+Goal: replace "synthetic corpus only" with numbers on public data, at no API cost. Order:
+1. Real cross-encoder in the cache band on the synthetic split (`eval/verifier_eval.py`).
+2. BEIR SciFact + NFCorpus retrieval, nDCG@10 with bootstrap CIs (`eval/beir.py`).
+3. QQP + PAWS pairwise cache decisions at a tune-chosen precision target (`eval/paraphrase.py`).
+4. RouteLLM gpt4_dataset: routing on observed Mixtral failures, APGR/CPT (`eval/routerbench.py`).
+None of these run in pytest (CI stays offline); their pure parts are tested.
+
+**Done (22 Nov), one commit each, all pushed.** README "Public benchmarks" holds the tables.
+- Cross-encoder strong verifier wired in (`COSTWISE_STRONG_VERIFIER=cross_encoder`); synthetic
+  stream (350 q, 175 repeats): STS-B every candidate 31/175 served, 5 wrong; fine-tuned MiniLM
+  21/175, 2 wrong, 15 ms; free config 17/175, 5 wrong; oracle 134/175.
+- BM25 now uses an inverted index (same scores, tested against the formula).
+- BEIR: SciFact hybrid 0.702 nDCG@10 (dense 0.648, BM25 0.665 = published 0.665); NFCorpus
+  hybrid 0.348 (dense 0.320). Reranker +0.008/+0.009, not significant, 0.7-3.8 s/query: off.
+- RouteLLM: embedding LR APGR 0.684 [0.664, 0.702], text-only 0.639, random 0.5, oracle 0.930;
+  95% acceptable at 34% GPT-4 calls vs 62% random; simulated saving 71.8% (list prices).
+- QQP/PAWS: fine-tuned verifier AP 0.81/0.86 (cosine 0.76/0.59). Guard: closed-corpus rule
+  blocked 1,190/1,841 QQP duplicates; tune-chosen open-domain rule (min_cap_ratio 0.95) 142.
+- Fine-tuned verifier v1 (6k+6k pairs, 1 epoch) underfit (PAWS AP 0.56); v2 (16k PAWS + 8k QQP,
+  2 epochs, lr 5e-5, 43 min CPU) is the one reported. The model lives in .state/models (not in
+  git); `data/tuned.json` keeps the Hub STS-B model so a fresh clone works.
+
 ## Done
 - **Phase 0:** design doc, plan, 12-document synthetic corpus (39 chunks), 60 questions
   (46 easy, 14 hard; 25 tune, 35 test; 2 paraphrases each) built by `scripts/make_questions.py`.
@@ -183,7 +210,26 @@ reproduces from a fresh run. All four were fixed on 16 Nov, each with a regressi
   "800MB" conflict and "800GB" vs "800 GB" do not. Offline eval rerun: data/tuned.json and
   results/offline.json unchanged; mock live counts unchanged.
 
-## Resume bullets (DRAFT, 16 Nov)
+## Resume bullets (22 Nov, with public-benchmark numbers)
+Every number is in results/*.json and the README; percentages come with their test sizes there.
+
+- Built Costwise RAG, a cost-aware RAG service (FastAPI, hybrid BM25 + dense retrieval, SQLite)
+  with a verified semantic cache and a small/large model router, evaluated on 5 public
+  benchmarks with tune/test splits, bootstrap CIs and pinned dataset revisions.
+- Hybrid retrieval with reciprocal rank fusion: nDCG@10 0.702 on BEIR SciFact and 0.348 on
+  NFCorpus, +0.054 / +0.028 over dense retrieval (paired-bootstrap CIs above zero); measured a
+  cross-encoder reranker and kept it off (+0.008, not significant, 170x the latency on CPU).
+- Router trained on 5,000 real prompts with GPT-4-judged small-model failures (RouteLLM data):
+  reaches 95% acceptable answers with 34% of prompts on GPT-4 versus 62% for random routing,
+  a 71.8% simulated cost saving versus always using GPT-4 (APGR 0.684 vs 0.5 random).
+- Fine-tuned a 22M-parameter cross-encoder cache verifier on CPU in 43 minutes: average
+  precision 0.86 on adversarial PAWS paraphrases where cosine similarity and public
+  cross-encoders score 0.47-0.59; in the service's cache it cut wrong hits from 5 to 2 per 350
+  queries at 15 ms per check and no API cost.
+- In a live A/B on OpenRouter, the router cut LLM cost per query by 68.8% versus always using
+  the large model at equal accuracy (66/70 vs 60/64), under a hard budget cap.
+
+## Resume bullets (DRAFT, 16 Nov, superseded)
 Offline numbers are real (results/offline.json, synthetic 12-document corpus, test split).
 Live numbers come from one partial paid run (results/live.json, 70-query stream, per query).
 
@@ -210,8 +256,11 @@ Live numbers come from one partial paid run (results/live.json, 70-query stream,
   itself (named volumes owned by uid 10001) and the MiniLM first-start download were not run.
   A local test image `costwise-rag:test` is left on this machine (`docker rmi costwise-rag:test`).
 - README Mermaid diagram not checked as rendered on GitHub.
-- Paid live eval not run; no real cost, latency or answer-quality numbers exist yet. The mock
-  numbers in results/live_mock.json are not real.
+- Paid live runs are partial (16 Nov): the router run finished; the cache configs on
+  OpenRouter stopped at the credit limit. A capped rerun of `cache_only` and `full` with
+  `--strong-verifier cross_encoder` (free verifier) would measure the cache saving end to end;
+  it needs Sahil's yes and credit. The mock numbers in results/live_mock.json are not real.
+- The public benchmarks are component evals; none measures the whole pipeline on real data.
 - Cross-encoder and stronger embedding models need a download; not done without a yes.
 - `CrossEncoderVerifier` is only tested with an injected scorer, never with the real model;
   `LLMVerifier` and `OpenRouterLLM` only with fake clients and `httpx.MockTransport`.

@@ -18,3 +18,13 @@ def test_make_charts_writes_both_pngs(tmp_path):
     assert [p.name for p in paths] == ["cache_thresholds.png", "router_tradeoff.png"]
     for p in paths:
         assert p.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n" and p.stat().st_size > 10_000
+
+
+def test_make_bench_charts_draws_each_present_result(tmp_path):
+    spec = importlib.util.spec_from_file_location("make_bench_charts", ROOT / "scripts" / "make_bench_charts.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    paths = mod.main([str(ROOT / "results"), str(tmp_path)])
+    assert [p.name for p in paths] == ["beir_ndcg.png", "router_curve.png", "paraphrase_ap.png"]
+    for p in paths:
+        assert p.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
