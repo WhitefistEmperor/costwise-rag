@@ -123,10 +123,13 @@ class KeyTermGuard:
 
 
 class CrossEncoderVerifier:
-    """Optional: scores the pair with a duplicate-question cross-encoder.
+    """Strong verifier that runs locally: a duplicate-question cross-encoder scores the pair.
 
-    Needs a model download on first use (about 300 MB), so it is off by default. Pass `scorer`
-    to supply the pair-scoring function directly (used in tests).
+    Costs no API money (about 10-30 ms per pair on a laptop CPU), so it can open the cache band
+    where an LLM verifier's calls would eat the saving. Needs a model download on first use
+    (about 330 MB for the default), so it is off by default. Pass `scorer` to supply the
+    pair-scoring function directly (used in tests and in the offline eval, which scores every
+    pair once).
     """
 
     name = "cross_encoder"
@@ -134,13 +137,28 @@ class CrossEncoderVerifier:
     def __init__(self, model_name: str = "cross-encoder/quora-distilroberta-base", threshold: float = 0.5,
                  scorer: Callable[[Sequence[tuple[str, str]]], Sequence[float]] | None = None):
         self.model_name, self.threshold, self._scorer = model_name, threshold, scorer
+        self.calls = 0
+        self._lock = threading.Lock()
+
+    def _get_scorer(self) -> Callable[[Sequence[tuple[str, str]]], Sequence[float]]:
+        with self._lock:                                # load the model once, even under concurrency
+            if self._scorer is None:
+                from sentence_transformers import CrossEncoder
+
+                self._scorer = CrossEncoder(self.model_name).predict
+            return self._scorer
+
+    def score(self, query: str, cached_query: str) -> float:
+        scorer = self._get_scorer()
+        with self._lock:
+            self.calls += 1
+        return float(scorer([(query, cached_query)])[0])
+
+    def judge(self, query: str, cached_query: str) -> Verdict:
+        return Verdict(self.score(query, cached_query) >= self.threshold, 0.0)
 
     def same_question(self, query: str, cached_query: str) -> bool:
-        if self._scorer is None:
-            from sentence_transformers import CrossEncoder
-
-            self._scorer = CrossEncoder(self.model_name).predict
-        return float(self._scorer([(query, cached_query)])[0]) >= self.threshold
+        return self.judge(query, cached_query).same
 
 
 class LLMVerifier:

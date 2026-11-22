@@ -43,5 +43,7 @@
       0.08194,
       0.109211
     ]
-  }
+  },
+  "cross_encoder_model": "cross-encoder/stsb-distilroberta-base",
+  "cross_encoder_threshold": 0.85
 }

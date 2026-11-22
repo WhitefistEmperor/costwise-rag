@@ -34,7 +34,7 @@ class Settings:
     top_k: int = 4
     cache_threshold: float = 0.90          # accept threshold; the cheap verifier alone decides above it
     cache_candidate_threshold: float = 0.90   # band [candidate, accept) needs the strong verifier too
-    cache_strong_verifier: str = field(default_factory=lambda: _env("STRONG_VERIFIER", "none"))  # none | llm
+    cache_strong_verifier: str = field(default_factory=lambda: _env("STRONG_VERIFIER", "none"))  # none | llm | cross_encoder
     cache_ttl_s: float = 24 * 3600
     route_threshold: float = 0.5
     max_answer_tokens: int = 300

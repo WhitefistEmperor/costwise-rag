@@ -297,7 +297,8 @@ def main() -> None:
     out = ROOT / "results" / "offline.json"
     out.parent.mkdir(exist_ok=True)
     out.write_text(json.dumps(results, indent=2), encoding="utf-8")
-    settings.tuned_path.write_text(json.dumps(tuned, indent=2), encoding="utf-8")
+    # Merge: keys fitted by other evals (the cross-encoder verifier's) are kept.
+    settings.tuned_path.write_text(json.dumps({**settings.load_tuned(), **tuned}, indent=2), encoding="utf-8")
     print(json.dumps(results, indent=2))
     print(f"\nresults: {out}\ntuned values: {settings.tuned_path}")
 

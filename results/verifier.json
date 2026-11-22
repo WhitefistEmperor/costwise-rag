@@ -1,0 +1,212 @@
+{
+  "note": "Real local cross-encoders as the strong verifier, offline, no API cost. The score threshold is fitted on tune; accept and candidate thresholds come from data/tuned.json (also fitted on tune). Counts are totals over all stream seeds.",
+  "accept_threshold": 0.88,
+  "candidate_threshold": 0.6,
+  "stream_seeds": 5,
+  "repeat_rate": 0.5,
+  "scored_pairs": 884,
+  "models": {
+    "cross-encoder/quora-distilroberta-base": {
+      "batch_scoring_s": 15.2,
+      "single_pair_latency": {
+        "pairs": 100,
+        "ms_p50": 37.6,
+        "ms_p95": 47.6
+      },
+      "band": {
+        "accept_threshold": 0.88,
+        "score_threshold_from_tune": 0.95,
+        "tune_band_pairs": {
+          "candidates": 62,
+          "same": 39,
+          "true_accepts": 0,
+          "false_accepts": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "test_band_pairs": {
+          "candidates": 87,
+          "same": 71,
+          "true_accepts": 1,
+          "false_accepts": 2,
+          "precision": 0.3333,
+          "recall": 0.0141
+        },
+        "test_stream": {
+          "queries": 350,
+          "repeats": 175,
+          "hits": 32,
+          "correct_hits": 17,
+          "wrong_hits": 15,
+          "strong_verifier_calls": 145,
+          "hit_rate": 0.0914,
+          "wrong_hit_rate": 0.0429,
+          "repeat_recall": 0.0971
+        }
+      },
+      "verify_all": {
+        "accept_threshold": 0.99,
+        "score_threshold_from_tune": 0.95,
+        "tune_band_pairs": {
+          "candidates": 68,
+          "same": 45,
+          "true_accepts": 0,
+          "false_accepts": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "test_band_pairs": {
+          "candidates": 96,
+          "same": 79,
+          "true_accepts": 4,
+          "false_accepts": 3,
+          "precision": 0.5714,
+          "recall": 0.0506
+        },
+        "test_stream": {
+          "queries": 350,
+          "repeats": 175,
+          "hits": 21,
+          "correct_hits": 6,
+          "wrong_hits": 15,
+          "strong_verifier_calls": 167,
+          "hit_rate": 0.06,
+          "wrong_hit_rate": 0.0429,
+          "repeat_recall": 0.0343
+        }
+      },
+      "cross_encoder_alone": {
+        "accept_threshold": 0.99,
+        "score_threshold_from_tune": 0.95,
+        "tune_band_pairs": {
+          "candidates": 159,
+          "same": 65,
+          "true_accepts": 0,
+          "false_accepts": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "test_band_pairs": {
+          "candidates": 283,
+          "same": 93,
+          "true_accepts": 4,
+          "false_accepts": 3,
+          "precision": 0.5714,
+          "recall": 0.043
+        },
+        "test_stream": {
+          "queries": 350,
+          "repeats": 175,
+          "hits": 21,
+          "correct_hits": 6,
+          "wrong_hits": 15,
+          "strong_verifier_calls": 260,
+          "hit_rate": 0.06,
+          "wrong_hit_rate": 0.0429,
+          "repeat_recall": 0.0343
+        }
+      }
+    },
+    "cross-encoder/stsb-distilroberta-base": {
+      "batch_scoring_s": 12.7,
+      "single_pair_latency": {
+        "pairs": 100,
+        "ms_p50": 38.1,
+        "ms_p95": 47.0
+      },
+      "band": {
+        "accept_threshold": 0.88,
+        "score_threshold_from_tune": 0.85,
+        "tune_band_pairs": {
+          "candidates": 62,
+          "same": 39,
+          "true_accepts": 6,
+          "false_accepts": 0,
+          "precision": 1.0,
+          "recall": 0.1538
+        },
+        "test_band_pairs": {
+          "candidates": 87,
+          "same": 71,
+          "true_accepts": 12,
+          "false_accepts": 2,
+          "precision": 0.8571,
+          "recall": 0.169
+        },
+        "test_stream": {
+          "queries": 350,
+          "repeats": 175,
+          "hits": 50,
+          "correct_hits": 40,
+          "wrong_hits": 10,
+          "strong_verifier_calls": 145,
+          "hit_rate": 0.1429,
+          "wrong_hit_rate": 0.0286,
+          "repeat_recall": 0.2286
+        }
+      },
+      "verify_all": {
+        "accept_threshold": 0.99,
+        "score_threshold_from_tune": 0.85,
+        "tune_band_pairs": {
+          "candidates": 68,
+          "same": 45,
+          "true_accepts": 10,
+          "false_accepts": 0,
+          "precision": 1.0,
+          "recall": 0.2222
+        },
+        "test_band_pairs": {
+          "candidates": 96,
+          "same": 79,
+          "true_accepts": 17,
+          "false_accepts": 2,
+          "precision": 0.8947,
+          "recall": 0.2152
+        },
+        "test_stream": {
+          "queries": 350,
+          "repeats": 175,
+          "hits": 36,
+          "correct_hits": 31,
+          "wrong_hits": 5,
+          "strong_verifier_calls": 167,
+          "hit_rate": 0.1029,
+          "wrong_hit_rate": 0.0143,
+          "repeat_recall": 0.1771
+        }
+      },
+      "cross_encoder_alone": {
+        "accept_threshold": 0.99,
+        "score_threshold_from_tune": 1.0,
+        "tune_band_pairs": {
+          "candidates": 159,
+          "same": 65,
+          "true_accepts": 0,
+          "false_accepts": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "test_band_pairs": {
+          "candidates": 283,
+          "same": 93,
+          "true_accepts": 0,
+          "false_accepts": 0,
+          "precision": null,
+          "recall": 0.0
+        },
+        "test_stream": {
+          "queries": 350,
+          "repeats": 175,
+          "hits": 0,
+          "correct_hits": 0,
+          "wrong_hits": 0,
+          "strong_verifier_calls": 260,
+          "hit_rate": 0.0,
+          "wrong_hit_rate": 0.0,
+          "repeat_recall": 0.0
+        }
+      }
+    }
+  }
+}

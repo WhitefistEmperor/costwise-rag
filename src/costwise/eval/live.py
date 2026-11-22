@@ -288,8 +288,9 @@ def main(argv: Sequence[str] | None = None) -> dict:
     ap.add_argument("--seeds", type=int, default=2, help="number of stream seeds run back to back")
     ap.add_argument("--repeat-rate", type=float, default=0.5)
     ap.add_argument("--configs", nargs="*", default=list(CONFIGS), choices=list(CONFIGS))
-    ap.add_argument("--strong-verifier", choices=["none", "llm"], default="none",
-                    help="llm: small-model YES/NO check opens the cache band [candidate, accept)")
+    ap.add_argument("--strong-verifier", choices=["none", "llm", "cross_encoder"], default="none",
+                    help="opens the cache band [candidate, accept): llm = small-model YES/NO check (paid), "
+                         "cross_encoder = local model (free; downloads on first use)")
     ap.add_argument("--price", type=parse_price, action="append", default=[],
                     help="MODEL=IN,OUT price override in USD per million tokens (for models not in the table)")
     ap.add_argument("--out", default=None, help="output JSON (default results/live.json or results/live_mock.json)")

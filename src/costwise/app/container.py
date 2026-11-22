@@ -8,7 +8,7 @@ from ..adapters.embedders import HashEmbedder, SentenceTransformerEmbedder
 from ..adapters.llm import MockLLM, OpenRouterLLM, ZaiLLM
 from ..adapters.retrieval import build_retrievers
 from ..adapters.storage import SQLiteCacheStore, SQLiteRequestLog
-from ..adapters.verifiers import KeyTermGuard, LLMVerifier
+from ..adapters.verifiers import CrossEncoderVerifier, KeyTermGuard, LLMVerifier
 from ..domain.cache import SemanticCache
 from ..adapters.corpus import load_corpus
 from ..domain.chunking import doc_hashes
@@ -77,11 +77,25 @@ def route_threshold_for(settings: Settings, tuned: dict) -> float:
     return learned
 
 
+def build_strong_verifier(settings: Settings, tuned: dict, llm: LLMClient):
+    """none | llm (small-model YES/NO, paid) | cross_encoder (local model, free). The cross-encoder's
+    model and score threshold come from data/tuned.json when the verifier eval has fitted them."""
+    kind = settings.cache_strong_verifier
+    if kind == "none":
+        return None
+    if kind == "llm":
+        return LLMVerifier(llm, settings.small_model)
+    if kind == "cross_encoder":
+        return CrossEncoderVerifier(tuned.get("cross_encoder_model", "cross-encoder/quora-distilroberta-base"),
+                                    tuned.get("cross_encoder_threshold", 0.5))
+    raise ValueError(f"unknown strong verifier {kind!r} (none | llm | cross_encoder)")
+
+
 def build_cache(settings: Settings, tuned: dict, chunks: list[Chunk], llm: LLMClient,
                 persistent: bool = True) -> SemanticCache | None:
     if not settings.cache_enabled:
         return None
-    strong = LLMVerifier(llm, settings.small_model) if settings.cache_strong_verifier == "llm" else None
+    strong = build_strong_verifier(settings, tuned, llm)
     return SemanticCache(
         threshold=tuned.get("cache_threshold", settings.cache_threshold),
         candidate_threshold=tuned.get("cache_candidate_threshold", settings.cache_candidate_threshold),
