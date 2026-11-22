@@ -19,6 +19,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest", "matplotlib"]
 charts = ["matplotlib"]
+# Public benchmarks (eval/beir.py, paraphrase.py, routerbench.py, train_verifier.py)
+bench = ["pandas", "pyarrow", "huggingface_hub", "matplotlib"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

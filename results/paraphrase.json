@@ -281,9 +281,9 @@
           },
           "cascade[cross-encoder/stsb-distilroberta-base]": {
             "params_from_tune": {
-              "accept": 1.01,
-              "candidate": 0.98,
-              "score": 0.05
+              "accept": 0.98,
+              "candidate": 0.5,
+              "score": 0.995
             },
             "test": {
               "served": 156,
@@ -302,7 +302,7 @@
               0.0668,
               0.0902
             ],
-            "cross_encoder_calls_share": 0.0312
+            "cross_encoder_calls_share": 0.6614
           },
           "cross_encoder[cross-encoder/stsb-distilroberta-base]": {
             "params_from_tune": null,
@@ -310,28 +310,28 @@
           },
           "cascade[cross-encoder/quora-distilroberta-base]": {
             "params_from_tune": {
-              "accept": 1.01,
+              "accept": 0.993,
               "candidate": 0.54,
               "score": 0.55
             },
             "test": {
-              "served": 1633,
-              "right": 1474,
-              "wrong": 159,
+              "served": 1635,
+              "right": 1475,
+              "wrong": 160,
               "duplicates": 1841,
               "pairs": 5000,
-              "precision": 0.9026,
-              "recall": 0.8007
+              "precision": 0.9021,
+              "recall": 0.8012
             },
             "precision_ci95": [
-              0.8875,
-              0.9157
+              0.8867,
+              0.9152
             ],
             "recall_ci95": [
-              0.7827,
-              0.818
+              0.7832,
+              0.8186
             ],
-            "cross_encoder_calls_share": 0.6674
+            "cross_encoder_calls_share": 0.6584
           },
           "cross_encoder[cross-encoder/quora-distilroberta-base]": {
             "params_from_tune": {
@@ -415,8 +415,29 @@
             "note": "no setting reaches the target on tune"
           },
           "cascade[cross-encoder/stsb-distilroberta-base]": {
-            "params_from_tune": null,
-            "note": "no setting reaches the target on tune"
+            "params_from_tune": {
+              "accept": 1.01,
+              "candidate": 0.996,
+              "score": 0.99
+            },
+            "test": {
+              "served": 4,
+              "right": 4,
+              "wrong": 0,
+              "duplicates": 1841,
+              "pairs": 5000,
+              "precision": 1.0,
+              "recall": 0.0022
+            },
+            "precision_ci95": [
+              1.0,
+              1.0
+            ],
+            "recall_ci95": [
+              0.0005,
+              0.0043
+            ],
+            "cross_encoder_calls_share": 0.0034
           },
           "cross_encoder[cross-encoder/stsb-distilroberta-base]": {
             "params_from_tune": null,
@@ -424,40 +445,99 @@
           },
           "cascade[cross-encoder/quora-distilroberta-base]": {
             "params_from_tune": {
-              "accept": 1.01,
+              "accept": 0.993,
               "candidate": 0.66,
               "score": 0.95
             },
             "test": {
-              "served": 1239,
-              "right": 1176,
-              "wrong": 63,
+              "served": 1244,
+              "right": 1178,
+              "wrong": 66,
               "duplicates": 1841,
               "pairs": 5000,
-              "precision": 0.9492,
-              "recall": 0.6388
+              "precision": 0.9469,
+              "recall": 0.6399
             },
             "precision_ci95": [
-              0.9371,
-              0.9608
+              0.9346,
+              0.9587
             ],
             "recall_ci95": [
-              0.6159,
-              0.6599
+              0.6173,
+              0.6608
             ],
-            "cross_encoder_calls_share": 0.5686
+            "cross_encoder_calls_share": 0.5596
           },
           "cross_encoder[cross-encoder/quora-distilroberta-base]": {
-            "params_from_tune": null,
-            "note": "no setting reaches the target on tune"
+            "params_from_tune": {
+              "score": 0.97
+            },
+            "test": {
+              "served": 1173,
+              "right": 1125,
+              "wrong": 48,
+              "duplicates": 1841,
+              "pairs": 5000,
+              "precision": 0.9591,
+              "recall": 0.6111
+            },
+            "precision_ci95": [
+              0.9474,
+              0.9701
+            ],
+            "recall_ci95": [
+              0.588,
+              0.6322
+            ],
+            "cross_encoder_calls_share": 1.0
           },
           "cascade[fine-tuned/verifier-minilm-paws-qqp]": {
-            "params_from_tune": null,
-            "note": "no setting reaches the target on tune"
+            "params_from_tune": {
+              "accept": 0.998,
+              "candidate": 0.5,
+              "score": 0.99
+            },
+            "test": {
+              "served": 22,
+              "right": 21,
+              "wrong": 1,
+              "duplicates": 1841,
+              "pairs": 5000,
+              "precision": 0.9545,
+              "recall": 0.0114
+            },
+            "precision_ci95": [
+              0.8421,
+              1.0
+            ],
+            "recall_ci95": [
+              0.0069,
+              0.0162
+            ],
+            "cross_encoder_calls_share": 0.6912
           },
           "cross_encoder[fine-tuned/verifier-minilm-paws-qqp]": {
-            "params_from_tune": null,
-            "note": "no setting reaches the target on tune"
+            "params_from_tune": {
+              "score": 0.99
+            },
+            "test": {
+              "served": 16,
+              "right": 15,
+              "wrong": 1,
+              "duplicates": 1841,
+              "pairs": 5000,
+              "precision": 0.9375,
+              "recall": 0.0081
+            },
+            "precision_ci95": [
+              0.7855,
+              1.0
+            ],
+            "recall_ci95": [
+              0.0043,
+              0.0123
+            ],
+            "cross_encoder_calls_share": 1.0
           }
         }
       }
@@ -519,8 +599,29 @@
             "note": "no setting reaches the target on tune"
           },
           "cascade[cross-encoder/quora-distilroberta-base]": {
-            "params_from_tune": null,
-            "note": "no setting reaches the target on tune"
+            "params_from_tune": {
+              "accept": 1.01,
+              "candidate": 0.99,
+              "score": 0.99
+            },
+            "test": {
+              "served": 28,
+              "right": 22,
+              "wrong": 6,
+              "duplicates": 2207,
+              "pairs": 5000,
+              "precision": 0.7857,
+              "recall": 0.01
+            },
+            "precision_ci95": [
+              0.6333,
+              0.9474
+            ],
+            "recall_ci95": [
+              0.006,
+              0.0142
+            ],
+            "cross_encoder_calls_share": 0.3158
           },
           "cross_encoder[cross-encoder/quora-distilroberta-base]": {
             "params_from_tune": null,
@@ -593,8 +694,26 @@
             "note": "no setting reaches the target on tune"
           },
           "cascade[cross-encoder/quora-distilroberta-base]": {
-            "params_from_tune": null,
-            "note": "no setting reaches the target on tune"
+            "params_from_tune": {
+              "accept": 1.01,
+              "candidate": 0.99,
+              "score": 0.995
+            },
+            "test": {
+              "served": 0,
+              "right": 0,
+              "wrong": 0,
+              "duplicates": 2207,
+              "pairs": 5000,
+              "precision": null,
+              "recall": 0.0
+            },
+            "precision_ci95": null,
+            "recall_ci95": [
+              0.0,
+              0.0
+            ],
+            "cross_encoder_calls_share": 0.3158
           },
           "cross_encoder[cross-encoder/quora-distilroberta-base]": {
             "params_from_tune": null,
@@ -667,8 +786,26 @@
             "note": "no setting reaches the target on tune"
           },
           "cascade[cross-encoder/quora-distilroberta-base]": {
-            "params_from_tune": null,
-            "note": "no setting reaches the target on tune"
+            "params_from_tune": {
+              "accept": 1.01,
+              "candidate": 0.99,
+              "score": 0.995
+            },
+            "test": {
+              "served": 0,
+              "right": 0,
+              "wrong": 0,
+              "duplicates": 2207,
+              "pairs": 5000,
+              "precision": null,
+              "recall": 0.0
+            },
+            "precision_ci95": null,
+            "recall_ci95": [
+              0.0,
+              0.0
+            ],
+            "cross_encoder_calls_share": 0.3158
           },
           "cross_encoder[cross-encoder/quora-distilroberta-base]": {
             "params_from_tune": null,
@@ -700,8 +837,27 @@
             "cross_encoder_calls_share": 0.5254
           },
           "cross_encoder[fine-tuned/verifier-minilm-paws-qqp]": {
-            "params_from_tune": null,
-            "note": "no setting reaches the target on tune"
+            "params_from_tune": {
+              "score": 0.97
+            },
+            "test": {
+              "served": 242,
+              "right": 232,
+              "wrong": 10,
+              "duplicates": 2207,
+              "pairs": 5000,
+              "precision": 0.9587,
+              "recall": 0.1051
+            },
+            "precision_ci95": [
+              0.9336,
+              0.9825
+            ],
+            "recall_ci95": [
+              0.0923,
+              0.1182
+            ],
+            "cross_encoder_calls_share": 1.0
           }
         }
       }

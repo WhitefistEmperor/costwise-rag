@@ -37,6 +37,8 @@ DATASETS = {
                  "tune_split": "dev"},
 }
 # Published reference points (nDCG@10 on test), used only as a sanity check of this harness.
+# Checked 22 Nov 2026: BM25 from the BEIR paper (arXiv 2104.08663, Table 2); MiniLM from the MTEB
+# results repo (embeddings-benchmark/results, all-MiniLM-L6-v2: SciFact 0.64508, NFCorpus 0.31594).
 PUBLISHED = {
     "scifact": {"bm25_elasticsearch_beir_paper": 0.665, "all-MiniLM-L6-v2_mteb": 0.645},
     "nfcorpus": {"bm25_elasticsearch_beir_paper": 0.325, "all-MiniLM-L6-v2_mteb": 0.316},
@@ -195,7 +197,11 @@ def evaluate(name: str, settings: Settings, rerank: bool = True) -> dict:
                  "fusion_tune_ndcg@10": {f"rrf_k={k},depth={d}": round(v, 4) for (k, d), v in fusion_scores.items()},
                  "fusion_from_tune": {"rrf_k": best_k, "depth": best_depth}, "methods": {}}
     runs = {}
-    for method, retriever in (("bm25", b.bm25), ("dense", b.dense), ("hybrid_rrf", hybrid)):
+    # hybrid_rrf_default: the fusion settings the service ships (rrf_k=60, depth=20), not tuned on BEIR.
+    # Its fused list holds at most 40 documents, so its recall@100 is not comparable.
+    default = HybridRetriever(b.dense, b.bm25)
+    for method, retriever in (("bm25", b.bm25), ("dense", b.dense), ("hybrid_rrf_default", default),
+                              ("hybrid_rrf", hybrid)):
         run, times = b.run(retriever, test_q)
         runs[method] = run
         out["methods"][method] = {**score_run(run, test_qrels), "search_latency": latency(times)}

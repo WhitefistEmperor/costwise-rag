@@ -13,10 +13,10 @@ the same answer quality.* Every number below comes from a reproducible eval in t
 
 | Component | Benchmark | Result |
 |---|---|---|
-| Hybrid retrieval | BEIR SciFact / NFCorpus | nDCG@10 0.702 / 0.348, +0.054 / +0.028 over dense (95% CIs above zero) |
+| Hybrid retrieval (as shipped) | BEIR SciFact / NFCorpus | nDCG@10 0.696 / 0.344, +0.048 / +0.025 over dense (95% CIs above zero); baselines match published BEIR/MTEB |
 | Router | RouteLLM, 5,000 held-out real prompts | 95% acceptable answers with 34% GPT-4 calls vs 62% random; simulated cost -71.8% |
-| Cache verifier (fine-tuned on CPU) | PAWS adversarial paraphrases | average precision 0.86 vs 0.59 for cosine; 94% precision where no public model reaches 80% |
-| Cache verifier on the service's stream | synthetic test stream, offline | wrong hits 5 -> 2 of 350 with a 15 ms local verifier |
+| Cache verifier (fine-tuned on CPU) | PAWS adversarial paraphrases (in-domain; public models zero-shot) | average precision 0.86 vs 0.59 for cosine; at 0.8 precision serves 78% of duplicates vs 5.5% for cosine |
+| Cache verifier on the service's stream | synthetic test stream, offline simulation | best setup: wrong hits 5 -> 2 of 350 (small counts; see Results) with a 15 ms local verifier, no API cost |
 
 Two small paid live runs (router; cache) on the service's own synthetic corpus are reported
 with their limits.
@@ -53,7 +53,7 @@ evals in `src/costwise/eval/`. Full design notes: [docs/ARCHITECTURE.md](docs/AR
 | Cheap check vs accurate check | **Two thresholds**: above the accept threshold the free guard decides; in the band below it a strong verifier (small LLM YES/NO, or a cross-encoder) must also agree, at most once per lookup, its cost charged to the request | One threshold | Keeps the free path strict and pays for accuracy only where it is needed. |
 | Cache freshness | TTL plus per-entry source-document hashes | Flush all on change; TTL only | Only answers built from a changed document are dropped. |
 | Which model answers | Logistic regression on hand-made features (length, numbers, multi-part cues, clauses, documents in top-k, retrieval scores), plus escalation when the small model says the context is insufficient | Hand rules; embedding classifier (RouteLLM style); pure cascade (FrugalGPT style); LLM router | Works with 75 labelled rows, explainable; the cascade is the safety net. The heuristic router is kept as a baseline. |
-| Retrieval | Hybrid BM25 + dense with reciprocal rank fusion, BM25 on an inverted index | Dense only; BM25 only; + cross-encoder reranker | Exact tokens ("3000", "Starter") and paraphrases both matter. On BEIR, hybrid beats dense by +0.054 / +0.028 nDCG@10 (CIs above zero). The reranker added only +0.008 / +0.009 (not significant) for 170-1,350x the latency on CPU, so it is off. |
+| Retrieval | Hybrid BM25 + dense with reciprocal rank fusion, BM25 on an inverted index | Dense only; BM25 only; + cross-encoder reranker | Exact tokens ("3000", "Starter") and paraphrases both matter. On BEIR, hybrid as shipped beats dense by +0.048 / +0.025 nDCG@10 (CIs above zero). The reranker added only +0.008 / +0.009 (not significant) for over 100x the latency on CPU, so it is off. |
 | Router signal | Query features, plus an embedding-based variant measured on public data | Hand rules only | On RouteLLM's real prompts, the embedding router needs 34% GPT-4 calls for 95% acceptable answers, against 62% for random routing. |
 | Storage, provider | NumPy brute-force search, SQLite, a thin `httpx` OpenRouter client | FAISS/Qdrant, Redis, LiteLLM | Zero setup at this size; each is a one-adapter swap. |
 
@@ -73,24 +73,32 @@ end-to-end claim (lower cost at the same answer quality) still rests on the smal
 further down.
 
 **Retrieval: BEIR SciFact and NFCorpus** ([results/beir.json](results/beir.json),
-`python -m costwise.eval.beir`). These are the service's own retrievers. The RRF constant and
-depth (k=10, depth 300) and the rerank depth were chosen on 200 train/dev queries. The values
-in brackets are 95% bootstrap CIs over test queries.
+`python -m costwise.eval.beir`). These are the service's own retrievers. Two hybrid rows are
+reported:
+- the **fusion settings the service ships** (RRF k=60, depth 20, not tuned on BEIR);
+- a **BEIR-tuned** variant (k=10, depth 300), chosen on 200 train/dev queries.
 
-| Retriever | SciFact nDCG@10 (300 q) | NFCorpus nDCG@10 (323 q) | SciFact recall@100 | Search latency p50 (CPU) |
+The rerank depth was chosen on 100 train/dev queries. The values in brackets are 95% bootstrap
+CIs over test queries.
+
+| Retriever | SciFact nDCG@10 (300 q) | NFCorpus nDCG@10 (323 q) | SciFact recall@100 | Search latency p50, SciFact (CPU) |
 |---|---|---|---|---|
-| BM25 (ours) | 0.665 [0.619, 0.710] | 0.312 [0.278, 0.346] | 0.889 | 1.4 ms |
-| Dense, all-MiniLM-L6-v2 | 0.648 [0.603, 0.693] | 0.320 [0.286, 0.354] | 0.925 | 1.1 ms |
-| **Hybrid RRF (what the service uses)** | **0.702** [0.662, 0.743] | **0.348** [0.314, 0.384] | **0.962** | 4.2 ms |
-| Hybrid + ms-marco MiniLM reranker | 0.710 [0.670, 0.752] | 0.357 [0.323, 0.393] | 0.962 | 705 ms / 3.8 s |
+| BM25 (ours) | 0.665 [0.619, 0.710] | 0.312 [0.278, 0.346] | 0.889 | 2.4 ms |
+| Dense, all-MiniLM-L6-v2 | 0.648 [0.603, 0.693] | 0.320 [0.286, 0.354] | 0.925 | 1.9 ms |
+| **Hybrid RRF, as shipped (k=60, depth 20)** | **0.696** [0.656, 0.736] | **0.344** [0.310, 0.381] | (top 40 only) | 5.3 ms |
+| Hybrid RRF, tuned on BEIR train (k=10, depth 300) | 0.702 [0.662, 0.743] | 0.348 [0.314, 0.384] | 0.962 | 5.9 ms |
+| Tuned hybrid + ms-marco MiniLM reranker | 0.710 [0.670, 0.752] | 0.357 [0.323, 0.393] | 0.962 | 703 ms (depth 10) |
 
-- **The harness is checked against published numbers:** our BM25 gives 0.665 on SciFact (BEIR
-  paper, Elasticsearch: 0.665), and MiniLM dense gives 0.648 (MTEB: 0.645).
-- **Hybrid beats dense on both datasets, per query:** +0.054 nDCG@10 on SciFact (paired
-  bootstrap 95% CI [+0.030, +0.080]) and +0.028 on NFCorpus ([+0.013, +0.044]).
-- **The reranker was measured and left out:** its gain over hybrid is +0.008 and +0.009, with
-  both CIs crossing zero, and it costs 0.7 to 3.8 s per query on a laptop CPU, which is 170 to
-  1,350 times hybrid's latency.
+- **The harness is checked against published numbers.** BM25 gives 0.665 on SciFact (BEIR
+  paper, Table 2: 0.665) and 0.312 on NFCorpus (paper: 0.325; our tokenizer has no stemming or
+  stopword list). MiniLM dense gives 0.648 and 0.320 (MTEB results: 0.645 and 0.316). For
+  reference, the paper's BM25 + cross-encoder reranking scores 0.688 and 0.350.
+- **Hybrid beats dense on both datasets, per query, even as shipped:** +0.048 nDCG@10 on SciFact
+  (paired bootstrap 95% CI [+0.025, +0.073]) and +0.025 on NFCorpus ([+0.010, +0.040]).
+  Tuning the fusion on BEIR adds only +0.006 / +0.003, so the service keeps its defaults.
+- **The reranker was measured and left out.** Its gain over the tuned hybrid is +0.008 and
+  +0.009, with both CIs crossing zero. It costs 0.7 s per query at the tune-chosen depth 10 on
+  SciFact, and 3.8 s at depth 50 on NFCorpus, on a laptop CPU: over 100 times hybrid's latency.
 
 ![nDCG@10 with 95% CIs on SciFact and NFCorpus](docs/img/beir_ndcg.png)
 
@@ -110,7 +118,9 @@ answer lengths; no model was called.
 
 - Always-Mixtral answers 86.9% of prompts acceptably. **The embedding router reaches 95% with 34%
   of prompts sent to GPT-4, against 62% for random routing** (45% fewer GPT-4 calls). Its
-  regularisation was chosen on a hold-out inside the fit half.
+  regularisation was chosen on a hold-out inside the fit half. The C grid was widened once,
+  after the first run picked its lowest value, and the new pick (C = 0.0003) is again at the
+  edge. The grid was not widened further.
 - APGR is the share of the always-small-to-always-large quality gap that is recovered,
   averaged over every possible share of large-model calls (RouteLLM's metric; random = 0.5).
 - The service router's 3 retrieval features do not exist for open chat prompts, so its row is
@@ -139,22 +149,34 @@ word, which is the cache's worst case. The tune pairs are 3,000 from train; the 
 ![Average precision per cache-decision score](docs/img/paraphrase_ap.png)
 
 - **Off-the-shelf similarity is not safe for a cache when questions differ by a word or two.**
-  On PAWS, cosine and both public cross-encoders sit close to the 0.44 base rate, and none of
-  them reaches 80% precision at any threshold on tune.
+  On PAWS, cosine and both public cross-encoders sit close to the 0.44 base rate. On tune, the
+  public cross-encoders never exceed 0.61 precision at 1% recall or more. Cosine reaches about
+  0.8 precision only at a threshold of 0.9986 (the best precision on the tune PR curve at 5%
+  recall or more), and there it serves 5.5% of test duplicates at 0.81 precision. Our verifier
+  serves 78% at the same precision.
 - **So we trained a verifier.** It starts from the 22M-parameter ms-marco MiniLM cross-encoder
   and is trained for 2 epochs on 16,000 PAWS and 8,000 QQP *train* pairs, on a laptop CPU in 43
   minutes (`python -m costwise.eval.train_verifier`). It reaches PAWS average precision 0.86
-  (cosine: 0.59). At a precision target of 0.90 chosen on tune, it serves 25% of PAWS duplicates
-  at 94.0% test precision (36 wrong out of 5,000), where no other score reaches the target.
-  It scores a pair in 15 ms on CPU.
+  (cosine: 0.59). With its threshold set on tune for 0.90 precision, it serves 25% of PAWS test
+  duplicates at 94.0% precision (36 wrong out of 5,000); no public score reaches that target on
+  tune. It scores a pair in 15 ms on CPU. It is **in-domain** for PAWS (trained on PAWS train,
+  tested on PAWS test), while the public models are zero-shot, so the comparison shows what
+  training on near-miss pairs buys, not a like-for-like model ranking.
 - **KeyTermGuard is a closed-domain tool.** On QQP, the rule the service uses (any word
   capitalised mid-sentence is a key term) turned Title Case words and "I" into key terms and
   blocked 1,190 of 1,841 true duplicates. An open-domain rule chosen on tune (a word must be
   capitalised in at least 95% of its mid-sentence uses) blocks 142, and at an 80% precision
   target it cuts wrong hits from 213 to 181 of 5,000, with recall 0.43 against 0.44.
-- Leakage: MiniLM's training mix includes Quora duplicates, and the Quora cross-encoder was
-  trained on QQP train, so their QQP numbers are optimistic. No model here saw PAWS test or
-  QQP validation.
+- Leakage: MiniLM's training mix includes Quora duplicate questions, and the Quora
+  cross-encoder was trained on a Quora duplicates split that is not GLUE's, so some GLUE
+  validation pairs may be in its training data; its 0.95 on QQP is likely optimistic. Our
+  verifier was trained on GLUE QQP *train* pairs, which are disjoint from validation.
+- Disclosure, in the style of the router cue-list note: the open-domain guard rule
+  (`min_cap_ratio`), the average-precision metric, the 0.80 target, the extended threshold
+  grids and the v2 training settings were all added after earlier test results had been seen.
+  A first verifier (6,000 + 6,000 pairs, 1 epoch) underfit, with PAWS average precision 0.56,
+  and was replaced by v2. Each choice is still made on tune, but the menu of choices was shaped
+  by test numbers.
 
 **The strong verifier on the service's own cache stream** ([results/verifier.json](results/verifier.json),
 `python -m costwise.eval.verifier_eval`). These are the 350-query test streams from the
@@ -166,18 +188,24 @@ used. Score thresholds are fitted on the tune split.
 | None (the free config) | | 17 | 5 | 0 |
 | STS-B cross-encoder | every candidate | 31 | 5 | 42 |
 | STS-B cross-encoder | band below 0.88 | 40 | 10 | 42 |
-| **Fine-tuned MiniLM (ours)** | **every candidate** | **21** | **2** | **15** |
+| Fine-tuned MiniLM (ours) | every candidate | 21 | 2 | 15 |
+| Fine-tuned MiniLM (ours) | band below 0.88 | 31 | 6 | 15 |
 | Quora cross-encoder | band below 0.88 | 17 | 15 | 58 |
 | Perfect verifier (upper bound) | band below 0.88 | 134 | 5 | n/a |
 
 - A local verifier has **no API cost**. The live run on 16 Nov showed that an LLM verifier's
   calls can cost more than the cache saves.
-- The trade-off is real. The STS-B model serves 82% more repeats than the free config at the
-  same 5 wrong hits. Our fine-tuned model cuts wrong hits from 5 to 2 and is 3x faster. All
-  real verifiers stay far below the perfect-verifier bound of 134, so the verifier is still the
-  cache's bottleneck.
-- `data/tuned.json` selects the STS-B model, because it is chosen on tune among Hub models only.
-  A model trained locally under `.state/` is not in a fresh clone or the Docker image.
+- There is a trade-off, and the counts are small. Checking every candidate is safer than
+  checking only the band: wrong hits are 5 for STS-B and 2 for our model, against 10 and 6 in
+  the band. The STS-B model serves 82% more repeats than the free config at the same 5 wrong
+  hits. Our model has the fewest wrong hits (2) and is about 3x faster. These rows come from one
+  offline simulation, with single-digit wrong counts, and the "every candidate" setup is
+  reported but was not chosen on tune. Every real verifier stays far below the perfect-verifier
+  bound of 134, so the verifier is still the cache's bottleneck.
+- What the app runs: `COSTWISE_STRONG_VERIFIER=cross_encoder` with the current
+  `data/tuned.json` gives the **STS-B band** row (40 served, 10 wrong). The model was chosen on
+  tune among Hub models only, because a model trained locally under `.state/` is not in a fresh
+  clone or the Docker image.
 
 ### Offline (real, free to reproduce; from [results/offline.json](results/offline.json))
 
@@ -311,6 +339,10 @@ PYTHONPATH=src .venv/Scripts/python -m costwise.eval.live --seeds 2
 
 Public benchmarks. Each one downloads its dataset (and models) from the Hugging Face Hub into
 the HF cache on first run, then runs offline on CPU. Times are for a laptop CPU.
+
+```bash
+.venv/Scripts/python -m pip install -e ".[dev,bench]"
+```
 
 ```bash
 PYTHONPATH=src .venv/Scripts/python -m costwise.eval.beir            # BEIR SciFact + NFCorpus, ~25 min

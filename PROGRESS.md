@@ -27,8 +27,8 @@ None of these run in pytest (CI stays offline); their pure parts are tested.
   stream (350 q, 175 repeats): STS-B every candidate 31/175 served, 5 wrong; fine-tuned MiniLM
   21/175, 2 wrong, 15 ms; free config 17/175, 5 wrong; oracle 134/175.
 - BM25 now uses an inverted index (same scores, tested against the formula).
-- BEIR: SciFact hybrid 0.702 nDCG@10 (dense 0.648, BM25 0.665 = published 0.665); NFCorpus
-  hybrid 0.348 (dense 0.320). Reranker +0.008/+0.009, not significant, 0.7-3.8 s/query: off.
+- BEIR: SciFact hybrid as shipped 0.696, BEIR-tuned 0.702 nDCG@10 (dense 0.648, BM25 0.665 =
+  published 0.665); NFCorpus 0.344 / 0.348 (dense 0.320; BM25 0.312 vs published 0.325). Reranker +0.008/+0.009, not significant, 0.7-3.8 s/query: off.
 - RouteLLM: embedding LR APGR 0.684 [0.664, 0.702], text-only 0.639, random 0.5, oracle 0.930;
   95% acceptable at 34% GPT-4 calls vs 62% random; simulated saving 71.8% (list prices).
 - QQP/PAWS: fine-tuned verifier AP 0.81/0.86 (cosine 0.76/0.59). Guard: closed-corpus rule
@@ -216,16 +216,17 @@ Every number is in results/*.json and the README; percentages come with their te
 - Built Costwise RAG, a cost-aware RAG service (FastAPI, hybrid BM25 + dense retrieval, SQLite)
   with a verified semantic cache and a small/large model router, evaluated on 5 public
   benchmarks with tune/test splits, bootstrap CIs and pinned dataset revisions.
-- Hybrid retrieval with reciprocal rank fusion: nDCG@10 0.702 on BEIR SciFact and 0.348 on
-  NFCorpus, +0.054 / +0.028 over dense retrieval (paired-bootstrap CIs above zero); measured a
-  cross-encoder reranker and kept it off (+0.008, not significant, 170x the latency on CPU).
+- Hybrid retrieval with reciprocal rank fusion: nDCG@10 0.696 on BEIR SciFact and 0.344 on
+  NFCorpus as shipped, +0.048 / +0.025 over dense retrieval (paired-bootstrap CIs above zero),
+  with BM25 and dense baselines matching published BEIR/MTEB figures; measured a cross-encoder
+  reranker and kept it off (+0.008, not significant, over 100x the latency on CPU).
 - Router trained on 5,000 real prompts with GPT-4-judged small-model failures (RouteLLM data):
   reaches 95% acceptable answers with 34% of prompts on GPT-4 versus 62% for random routing,
   a 71.8% simulated cost saving versus always using GPT-4 (APGR 0.684 vs 0.5 random).
-- Fine-tuned a 22M-parameter cross-encoder cache verifier on CPU in 43 minutes: average
-  precision 0.86 on adversarial PAWS paraphrases where cosine similarity and public
-  cross-encoders score 0.47-0.59; in the service's cache it cut wrong hits from 5 to 2 per 350
-  queries at 15 ms per check and no API cost.
+- Fine-tuned a 22M-parameter cross-encoder cache verifier on CPU in 43 minutes (PAWS + QQP train
+  pairs): average precision 0.86 on held-out adversarial PAWS paraphrases versus 0.59 for cosine
+  similarity and 0.47-0.51 for public cross-encoders; at about 0.8 precision it accepts 78% of
+  true duplicates versus 5.5% for cosine, at 15 ms per check and no API cost.
 - In a live A/B on OpenRouter, the router cut LLM cost per query by 68.8% versus always using
   the large model at equal accuracy (66/70 vs 60/64), under a hard budget cap.
 
@@ -259,7 +260,8 @@ Live numbers come from one partial paid run (results/live.json, 70-query stream,
 - Paid live runs are partial (16 Nov): the router run finished; the cache configs on
   OpenRouter stopped at the credit limit. A capped rerun of `cache_only` and `full` with
   `--strong-verifier cross_encoder` (free verifier) would measure the cache saving end to end;
-  it needs Sahil's yes and credit. The mock numbers in results/live_mock.json are not real.
+  it needs Sahil's yes and credit. Checked free (22 Nov): a mock dry run with
+  `--strong-verifier cross_encoder` made 29 verifier calls, so the flag reaches the pipeline. The mock numbers in results/live_mock.json are not real.
 - The public benchmarks are component evals; none measures the whole pipeline on real data.
 - Cross-encoder and stronger embedding models need a download; not done without a yes.
 - `CrossEncoderVerifier` is only tested with an injected scorer, never with the real model;

@@ -49,8 +49,9 @@ DATASETS = {
 }
 CROSS_ENCODERS = ["cross-encoder/stsb-distilroberta-base", "cross-encoder/quora-distilroberta-base"]
 TARGETS = [0.80, 0.90, 0.95]
-COS_GRID = [round(0.50 + 0.02 * i, 2) for i in range(25)]          # 0.50 .. 0.98
-SCORE_GRID = [round(0.05 * i, 2) for i in range(1, 20)]            # 0.05 .. 0.95
+# Dense at the top: PAWS word swaps embed at cosine > 0.98, so the high end matters.
+COS_GRID = [round(0.50 + 0.02 * i, 2) for i in range(25)] + [0.985, 0.99, 0.993, 0.996, 0.998]
+SCORE_GRID = [round(0.05 * i, 2) for i in range(1, 20)] + [0.97, 0.99, 0.995]
 TUNE_N, TEST_N = 3000, 5000
 # Entity-term rule for open-domain text: keep words capitalised in at least this share of their
 # mid-sentence occurrences (0 = the service's closed-corpus rule). Chosen on tune by average precision.
