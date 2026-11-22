@@ -1,0 +1,337 @@
+{
+  "note": "Public BEIR benchmarks, test qrels; depths chosen on train/dev samples. Search latency is per query on this CPU, query embedding excluded.",
+  "datasets": {
+    "scifact": {
+      "dataset": "scifact",
+      "revision": "b3b5335604bf5ee3c4447671af975ea25143d4f5",
+      "documents": 5183,
+      "test_queries": 300,
+      "tune_split": "train",
+      "tune_queries": 200,
+      "embedder": "sentence-transformers/all-MiniLM-L6-v2",
+      "doc_embedding_s": 0.0,
+      "bm25_index_s": 1.2,
+      "published_ndcg@10": {
+        "bm25_elasticsearch_beir_paper": 0.665,
+        "all-MiniLM-L6-v2_mteb": 0.645
+      },
+      "fusion_tune_ndcg@10": {
+        "rrf_k=10,depth=100": 0.7303,
+        "rrf_k=10,depth=300": 0.7308,
+        "rrf_k=10,depth=1000": 0.7307,
+        "rrf_k=30,depth=100": 0.7231,
+        "rrf_k=30,depth=300": 0.7252,
+        "rrf_k=30,depth=1000": 0.7254,
+        "rrf_k=60,depth=100": 0.7202,
+        "rrf_k=60,depth=300": 0.7213,
+        "rrf_k=60,depth=1000": 0.7213,
+        "rrf_k=100,depth=100": 0.7171,
+        "rrf_k=100,depth=300": 0.7181,
+        "rrf_k=100,depth=1000": 0.7181
+      },
+      "fusion_from_tune": {
+        "rrf_k": 10,
+        "depth": 300
+      },
+      "methods": {
+        "bm25": {
+          "queries": 300,
+          "ndcg@10": 0.6645,
+          "ndcg@10_ci95": [
+            0.6194,
+            0.7096
+          ],
+          "recall@100": 0.8892,
+          "recall@100_ci95": [
+            0.8532,
+            0.9237
+          ],
+          "mrr@10": 0.6325,
+          "mrr@10_ci95": [
+            0.5858,
+            0.6815
+          ],
+          "search_latency": {
+            "ms_p50": 1.35,
+            "ms_p95": 1.83
+          }
+        },
+        "dense": {
+          "queries": 300,
+          "ndcg@10": 0.6484,
+          "ndcg@10_ci95": [
+            0.6026,
+            0.6926
+          ],
+          "recall@100": 0.925,
+          "recall@100_ci95": [
+            0.895,
+            0.9533
+          ],
+          "mrr@10": 0.6068,
+          "mrr@10_ci95": [
+            0.5569,
+            0.6539
+          ],
+          "search_latency": {
+            "ms_p50": 1.06,
+            "ms_p95": 1.54
+          }
+        },
+        "hybrid_rrf": {
+          "queries": 300,
+          "ndcg@10": 0.7021,
+          "ndcg@10_ci95": [
+            0.6617,
+            0.7429
+          ],
+          "recall@100": 0.9617,
+          "recall@100_ci95": [
+            0.9383,
+            0.9817
+          ],
+          "mrr@10": 0.6589,
+          "mrr@10_ci95": [
+            0.6132,
+            0.7032
+          ],
+          "search_latency": {
+            "ms_p50": 4.2,
+            "ms_p95": 4.6
+          }
+        },
+        "hybrid_rrf+rerank": {
+          "queries": 300,
+          "ndcg@10": 0.7099,
+          "ndcg@10_ci95": [
+            0.6695,
+            0.7519
+          ],
+          "recall@100": 0.9617,
+          "recall@100_ci95": [
+            0.9383,
+            0.9817
+          ],
+          "mrr@10": 0.6745,
+          "mrr@10_ci95": [
+            0.629,
+            0.7206
+          ],
+          "rerank_latency": {
+            "ms_p50": 705.03,
+            "ms_p95": 757.56
+          },
+          "rerank_depth": 10
+        }
+      },
+      "rerank_tune_queries": 100,
+      "rerank_depth_tune_ndcg@10": {
+        "50": 0.7944,
+        "20": 0.7944,
+        "10": 0.8057
+      },
+      "rerank_depth_from_tune": 10,
+      "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+      "paired_vs_dense_ndcg@10": {
+        "bm25": {
+          "mean_diff": 0.016,
+          "ci95": [
+            -0.0203,
+            0.0544
+          ],
+          "p_not_better": 0.217
+        },
+        "hybrid_rrf": {
+          "mean_diff": 0.0537,
+          "ci95": [
+            0.0302,
+            0.0804
+          ],
+          "p_not_better": 0.0
+        },
+        "hybrid_rrf+rerank": {
+          "mean_diff": 0.0615,
+          "ci95": [
+            0.0316,
+            0.0944
+          ],
+          "p_not_better": 0.0
+        }
+      },
+      "paired_rerank_vs_hybrid_ndcg@10": {
+        "mean_diff": 0.0078,
+        "ci95": [
+          -0.0135,
+          0.0298
+        ],
+        "p_not_better": 0.2555
+      }
+    },
+    "nfcorpus": {
+      "dataset": "nfcorpus",
+      "revision": "b5026a0e96e8a7ac4f95f482a596389289d46269",
+      "documents": 3633,
+      "test_queries": 323,
+      "tune_split": "dev",
+      "tune_queries": 200,
+      "embedder": "sentence-transformers/all-MiniLM-L6-v2",
+      "doc_embedding_s": 141.6,
+      "bm25_index_s": 0.8,
+      "published_ndcg@10": {
+        "bm25_elasticsearch_beir_paper": 0.325,
+        "all-MiniLM-L6-v2_mteb": 0.316
+      },
+      "fusion_tune_ndcg@10": {
+        "rrf_k=10,depth=100": 0.3318,
+        "rrf_k=10,depth=300": 0.3322,
+        "rrf_k=10,depth=1000": 0.3322,
+        "rrf_k=30,depth=100": 0.3295,
+        "rrf_k=30,depth=300": 0.3311,
+        "rrf_k=30,depth=1000": 0.3319,
+        "rrf_k=60,depth=100": 0.3271,
+        "rrf_k=60,depth=300": 0.3291,
+        "rrf_k=60,depth=1000": 0.3298,
+        "rrf_k=100,depth=100": 0.3264,
+        "rrf_k=100,depth=300": 0.3278,
+        "rrf_k=100,depth=1000": 0.3289
+      },
+      "fusion_from_tune": {
+        "rrf_k": 10,
+        "depth": 300
+      },
+      "methods": {
+        "bm25": {
+          "queries": 323,
+          "ndcg@10": 0.312,
+          "ndcg@10_ci95": [
+            0.2781,
+            0.3462
+          ],
+          "recall@100": 0.2401,
+          "recall@100_ci95": [
+            0.2117,
+            0.269
+          ],
+          "mrr@10": 0.5213,
+          "mrr@10_ci95": [
+            0.4713,
+            0.571
+          ],
+          "search_latency": {
+            "ms_p50": 0.78,
+            "ms_p95": 1.19
+          }
+        },
+        "dense": {
+          "queries": 323,
+          "ndcg@10": 0.3195,
+          "ndcg@10_ci95": [
+            0.2856,
+            0.3541
+          ],
+          "recall@100": 0.3148,
+          "recall@100_ci95": [
+            0.2854,
+            0.3454
+          ],
+          "mrr@10": 0.5104,
+          "mrr@10_ci95": [
+            0.4631,
+            0.5585
+          ],
+          "search_latency": {
+            "ms_p50": 0.86,
+            "ms_p95": 1.18
+          }
+        },
+        "hybrid_rrf": {
+          "queries": 323,
+          "ndcg@10": 0.3477,
+          "ndcg@10_ci95": [
+            0.3136,
+            0.3837
+          ],
+          "recall@100": 0.3231,
+          "recall@100_ci95": [
+            0.294,
+            0.3539
+          ],
+          "mrr@10": 0.5524,
+          "mrr@10_ci95": [
+            0.5034,
+            0.5994
+          ],
+          "search_latency": {
+            "ms_p50": 2.79,
+            "ms_p95": 3.43
+          }
+        },
+        "hybrid_rrf+rerank": {
+          "queries": 323,
+          "ndcg@10": 0.3569,
+          "ndcg@10_ci95": [
+            0.3227,
+            0.3926
+          ],
+          "recall@100": 0.3231,
+          "recall@100_ci95": [
+            0.294,
+            0.3539
+          ],
+          "mrr@10": 0.5787,
+          "mrr@10_ci95": [
+            0.5301,
+            0.626
+          ],
+          "rerank_latency": {
+            "ms_p50": 3784.64,
+            "ms_p95": 4455.06
+          },
+          "rerank_depth": 50
+        }
+      },
+      "rerank_tune_queries": 100,
+      "rerank_depth_tune_ndcg@10": {
+        "50": 0.3715,
+        "20": 0.3667,
+        "10": 0.3551
+      },
+      "rerank_depth_from_tune": 50,
+      "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+      "paired_vs_dense_ndcg@10": {
+        "bm25": {
+          "mean_diff": -0.0074,
+          "ci95": [
+            -0.0303,
+            0.0151
+          ],
+          "p_not_better": 0.728
+        },
+        "hybrid_rrf": {
+          "mean_diff": 0.0282,
+          "ci95": [
+            0.0126,
+            0.0439
+          ],
+          "p_not_better": 0.0
+        },
+        "hybrid_rrf+rerank": {
+          "mean_diff": 0.0374,
+          "ci95": [
+            0.0194,
+            0.0543
+          ],
+          "p_not_better": 0.0
+        }
+      },
+      "paired_rerank_vs_hybrid_ndcg@10": {
+        "mean_diff": 0.0092,
+        "ci95": [
+          -0.0037,
+          0.0221
+        ],
+        "p_not_better": 0.0845
+      }
+    }
+  }
+}
